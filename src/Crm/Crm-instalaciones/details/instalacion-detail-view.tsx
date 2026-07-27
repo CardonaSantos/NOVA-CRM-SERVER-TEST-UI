@@ -335,11 +335,6 @@ export function InstalacionDetailView({
                 />
 
                 <DetailItem
-                  label="Registro migrado"
-                  value={instalacion.esMigrada ? "Sí" : "No"}
-                />
-
-                <DetailItem
                   label="SSID"
                   value={instalacion.wifi.ssid || <EmptyValue />}
                 />

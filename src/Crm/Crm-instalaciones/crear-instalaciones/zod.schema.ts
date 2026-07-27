@@ -169,7 +169,7 @@ export const CREAR_INSTALACION_DEFAULT_VALUES: CrearInstalacionFormValues = {
   motivo: "",
   observaciones: "",
 
-  fechaProgramada: null,
+  fechaProgramada: new Date().toISOString(),
   fechaInicio: null,
 
   direccionInstalacion: "",
