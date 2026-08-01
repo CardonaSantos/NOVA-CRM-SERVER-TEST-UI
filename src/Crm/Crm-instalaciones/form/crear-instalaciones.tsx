@@ -4,45 +4,47 @@ import {
   AppForm,
   AppFormDatePicker,
   AppFormInput,
-  AppFormMultiSelect,
   AppFormSingleSelect,
   AppFormSubmit,
   AppFormTextarea,
 } from "@/components/app/form";
-import { CrearInstalacionFormValues } from "../crear-instalaciones/zod.schema";
 import { AppStack } from "@/components/app/primitives/app-stack";
 import { AppGrid } from "@/components/app/primitives/app-grid";
 import { AppSeparator } from "@/components/app/primitives/app-separator";
 import { AppInline } from "@/components/app/primitives/app-inline";
-
-type NumberSelectOption = {
-  value: number;
-  label: string;
-};
-
-type StringSelectOption<TValue extends string = string> = {
-  value: TValue;
-  label: string;
-};
+import type { AppSelectOption } from "@/components/app/primitives/app-single-select";
+import {
+  EstadoInstalacionCliente,
+  MetodoAutenticacionInternet,
+  TecnologiaAccesoInternet,
+  TipoInstalacionCliente,
+} from "@/Crm/features/instalaciones/enums";
+import { InstalacionAccesoSection } from "./instalacion-acceso-section";
+import { InstalacionTecnicosSection } from "./instalacion-tecnicos-section";
+import { CrearInstalacionFormValues } from "../schema/zod.schema";
 
 type InstalacionCreateFormProps = {
   form: UseFormReturn<CrearInstalacionFormValues>;
 
   onSubmit: SubmitHandler<CrearInstalacionFormValues>;
 
-  clienteOptions: NumberSelectOption[];
+  clienteOptions: AppSelectOption<number>[];
 
-  servicioOptions: NumberSelectOption[];
+  servicioOptions: AppSelectOption<number>[];
 
-  ticketOptions: NumberSelectOption[];
+  ticketOptions: AppSelectOption<number>[];
 
-  tecnicoOptions: NumberSelectOption[];
+  tecnicoOptions: AppSelectOption<number>[];
 
-  tecnicoResponsableOptions: NumberSelectOption[];
+  routerOptions: AppSelectOption<number>[];
 
-  tipoOptions: StringSelectOption[];
+  tipoOptions: AppSelectOption<TipoInstalacionCliente>[];
 
-  estadoOptions: StringSelectOption[];
+  estadoOptions: AppSelectOption<EstadoInstalacionCliente>[];
+
+  tecnologiaOptions: AppSelectOption<TecnologiaAccesoInternet>[];
+
+  metodoAutenticacionOptions: AppSelectOption<MetodoAutenticacionInternet>[];
 
   isLoadingClientes?: boolean;
 
@@ -51,6 +53,8 @@ type InstalacionCreateFormProps = {
   isLoadingTickets?: boolean;
 
   isLoadingTecnicos?: boolean;
+
+  isLoadingRouters?: boolean;
 };
 
 export function InstalacionCreateForm({
@@ -65,11 +69,15 @@ export function InstalacionCreateForm({
 
   tecnicoOptions,
 
-  tecnicoResponsableOptions,
+  routerOptions,
 
   tipoOptions,
 
   estadoOptions,
+
+  tecnologiaOptions,
+
+  metodoAutenticacionOptions,
 
   isLoadingClientes = false,
 
@@ -78,9 +86,9 @@ export function InstalacionCreateForm({
   isLoadingTickets = false,
 
   isLoadingTecnicos = false,
-}: InstalacionCreateFormProps) {
-  const hasTecnicos = tecnicoResponsableOptions.length > 0;
 
+  isLoadingRouters = false,
+}: InstalacionCreateFormProps) {
   return (
     <AppForm form={form} onSubmit={onSubmit}>
       <div className="p-2 sm:p-3">
@@ -142,7 +150,10 @@ export function InstalacionCreateForm({
                   isClearable
                 />
 
-                <AppFormSingleSelect<CrearInstalacionFormValues, string>
+                <AppFormSingleSelect<
+                  CrearInstalacionFormValues,
+                  TipoInstalacionCliente
+                >
                   name="tipo"
                   label="Tipo de instalación"
                   options={tipoOptions}
@@ -151,7 +162,10 @@ export function InstalacionCreateForm({
                   required
                 />
 
-                <AppFormSingleSelect<CrearInstalacionFormValues, string>
+                <AppFormSingleSelect<
+                  CrearInstalacionFormValues,
+                  EstadoInstalacionCliente
+                >
                   name="estado"
                   label="Estado inicial"
                   options={estadoOptions}
@@ -194,6 +208,15 @@ export function InstalacionCreateForm({
               </AppGrid>
             </AppStack>
           </section>
+
+          <AppSeparator />
+
+          <InstalacionAccesoSection
+            tecnologiaOptions={tecnologiaOptions}
+            metodoAutenticacionOptions={metodoAutenticacionOptions}
+            routerOptions={routerOptions}
+            isLoadingRouters={isLoadingRouters}
+          />
 
           <AppSeparator />
 
@@ -291,62 +314,10 @@ export function InstalacionCreateForm({
 
           {/* Técnicos */}
 
-          <section aria-labelledby="instalacion-tecnicos-title">
-            <AppStack gap="sm">
-              <div>
-                <h2
-                  id="instalacion-tecnicos-title"
-                  className="text-base font-medium"
-                >
-                  Técnicos
-                </h2>
-
-                <p className="text-sm">
-                  Asigne uno o varios técnicos y defina un responsable.
-                </p>
-              </div>
-
-              <AppGrid
-                cols={{
-                  base: 1,
-                  md: 2,
-                }}
-                gap="sm"
-              >
-                <AppFormMultiSelect<CrearInstalacionFormValues, number>
-                  name="tecnicoIds"
-                  label="Técnicos asignados"
-                  options={tecnicoOptions}
-                  placeholder="Seleccione técnicos"
-                  density="compact"
-                  isLoading={isLoadingTecnicos}
-                />
-
-                <AppFormSingleSelect<CrearInstalacionFormValues, number>
-                  name="tecnicoResponsableId"
-                  label="Técnico responsable"
-                  options={tecnicoResponsableOptions}
-                  placeholder={
-                    hasTecnicos
-                      ? "Seleccione un responsable"
-                      : "Primero asigne técnicos"
-                  }
-                  density="compact"
-                  isDisabled={!hasTecnicos}
-                  isClearable
-                />
-
-                <AppFormSingleSelect<CrearInstalacionFormValues, number>
-                  name="asesorId"
-                  label="Assesor Responsable"
-                  options={tecnicoOptions}
-                  placeholder={"Seleccione un asesor responsable"}
-                  density="compact"
-                  isClearable
-                />
-              </AppGrid>
-            </AppStack>
-          </section>
+          <InstalacionTecnicosSection
+            tecnicoOptions={tecnicoOptions}
+            isLoadingTecnicos={isLoadingTecnicos}
+          />
 
           <AppSeparator />
 

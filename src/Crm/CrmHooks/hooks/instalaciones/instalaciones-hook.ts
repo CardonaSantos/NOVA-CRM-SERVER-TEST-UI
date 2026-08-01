@@ -5,9 +5,10 @@ import { useInvalidateQk } from "../useInvalidateQk/useInvalidateQk";
 import {
   ClienteInstalacionDetalle,
   ClienteInstalacionListResponse,
+  CrearClienteInstalacionResponse,
 } from "@/Crm/features/instalaciones/instalaciones.interfaces";
-import { CrearClienteInstalacionPayload } from "@/Crm/features/instalaciones/crear-instalacion.payload";
 import { FiltrarClienteInstalacionesParams } from "@/Crm/features/instalaciones/filter";
+import { CrearClienteInstalacionPayload } from "@/Crm/Crm-instalaciones/common/crear-instalacion.payload";
 
 /**
  * LISTAR INSTALACIONES PAGINADAS CON FILTRO
@@ -33,16 +34,14 @@ export function useGetInstalacionesPaginated(
  */
 export function useCreateInstalacion() {
   const invalidate = useInvalidateQk();
-  return crm.useMutationApi<CrearClienteInstalacionPayload>(
-    "post",
-    crm_endpoints.instalaciones.post_instalacion,
-    undefined,
-    {
-      onSuccess: () => {
-        invalidate(instalacionesQkeys.all);
-      },
+  return crm.useMutationApi<
+    CrearClienteInstalacionResponse,
+    CrearClienteInstalacionPayload
+  >("post", crm_endpoints.instalaciones.post_instalacion, undefined, {
+    onSuccess: () => {
+      invalidate(instalacionesQkeys.all);
     },
-  );
+  });
 }
 
 /**

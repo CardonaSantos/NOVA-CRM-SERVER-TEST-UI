@@ -284,6 +284,8 @@ export function AppSidebar() {
   const handleNavigate = React.useCallback(() => {
     sidebar.closeMobile();
   }, [sidebar]);
+  const storedTokenCRM = localStorage.getItem("tokenAuthCRM");
+  console.log("El token es: ", storedTokenCRM);
 
   return (
     <>

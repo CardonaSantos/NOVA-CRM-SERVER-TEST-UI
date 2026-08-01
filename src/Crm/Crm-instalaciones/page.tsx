@@ -1,23 +1,18 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
-import {
-  useAppConfirmHandler,
-  useAppFormHandlers,
-} from "@/components/app/handlers";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { useAppConfirmHandler } from "@/components/app/handlers";
 import { useGetUsersToSelect } from "../CrmHooks/hooks/useUsuarios/use-usuers";
 import { useGetCustomerToSelect } from "../CrmHooks/hooks/Client/useGetClient";
 import { useCreateInstalacion } from "../CrmHooks/hooks/instalaciones/instalaciones-hook";
-import {
-  CREAR_INSTALACION_DEFAULT_VALUES,
-  CrearInstalacionFormValues,
-  crearInstalacionSchema,
-} from "./crear-instalaciones/zod.schema";
+
 import {
   EstadoInstalacionCliente,
+  EstadoResultadoPrealtaPppoe,
+  MetodoAutenticacionInternet,
+  TecnologiaAccesoInternet,
   TipoInstalacionCliente,
 } from "../features/instalaciones/enums";
-import { toCrearInstalacionPayload } from "./crear-instalaciones/crear-instalaciones.mapper";
 import { AppContainer } from "@/components/app/primitives/app-container";
 import { AppStack } from "@/components/app/primitives/app-stack";
 import { AppCard } from "@/components/app/primitives/app-card";
@@ -29,10 +24,17 @@ import { getApiErrorMessageAxios } from "@/utils/getApiAxiosMessage";
 import { useStoreCrm } from "../ZustandCrm/ZustandCrmContext";
 import { AppConfirmDialog } from "@/components/app/primitives/app-confirm-dialog";
 import { PageTransitionCrm } from "@/components/Layout/page-transition";
+import { useGetMikroTiks } from "../CrmHooks/hooks/Mikrotik/useGetMikroTik";
+import { ReplaceUnderlines } from "@/utils/replaceUnderlines";
+import {
+  CREAR_INSTALACION_DEFAULT_VALUES,
+  CrearInstalacionFormValues,
+  crearInstalacionSchema,
+} from "./schema/zod.schema";
+import { toCrearInstalacionPayload } from "./common/crear-instalaciones.mapper";
 
 function InstalacionesMainPage() {
   const empresaId = useStoreCrm((state) => state.empresaId) ?? 0;
-  const creadoPorId = useStoreCrm((state) => state.userIdCRM) ?? 0;
 
   const { data: tecnicos = [], isLoading: isLoadingTecnicos } =
     useGetUsersToSelect();
@@ -42,6 +44,8 @@ function InstalacionesMainPage() {
 
   const { data: servicios = [], isLoading: isLoadingServicios } =
     useGetServiciosWifi();
+
+  const { data: routers = [], isLoading: isLoadingRouters } = useGetMikroTiks();
 
   const {
     data: tickets = {
@@ -75,23 +79,6 @@ function InstalacionesMainPage() {
     defaultValues: CREAR_INSTALACION_DEFAULT_VALUES,
 
     mode: "onChange",
-  });
-
-  const { setField, reset } = useAppFormHandlers(form);
-
-  /*
-   * Técnicos seleccionados
-   */
-
-  const tecnicoIds =
-    useWatch({
-      control: form.control,
-      name: "tecnicoIds",
-    }) ?? [];
-
-  const tecnicoResponsableId = useWatch({
-    control: form.control,
-    name: "tecnicoResponsableId",
   });
 
   /*
@@ -134,17 +121,22 @@ function InstalacionesMainPage() {
     [tickets],
   );
 
-  const tecnicoResponsableOptions = useMemo(() => {
-    const selectedIds = new Set(tecnicoIds);
-
-    return tecnicoOptions.filter((option) => selectedIds.has(option.value));
-  }, [tecnicoIds, tecnicoOptions]);
+  const routerOptions = useMemo(
+    () =>
+      routers
+        .filter((router) => router.empresaId === empresaId && router.activo)
+        .map((router) => ({
+          value: router.id,
+          label: `${router.nombre} · ${router.host}`,
+        })),
+    [empresaId, routers],
+  );
 
   const tipoOptions = useMemo(
     () =>
       Object.values(TipoInstalacionCliente).map((value) => ({
         value,
-        label: value,
+        label: ReplaceUnderlines(value),
       })),
     [],
   );
@@ -153,22 +145,28 @@ function InstalacionesMainPage() {
     () =>
       Object.values(EstadoInstalacionCliente).map((value) => ({
         value,
-        label: value,
+        label: ReplaceUnderlines(value),
       })),
     [],
   );
 
-  useEffect(() => {
-    if (tecnicoResponsableId === null) {
-      return;
-    }
+  const tecnologiaOptions = useMemo(
+    () =>
+      Object.values(TecnologiaAccesoInternet).map((value) => ({
+        value,
+        label: ReplaceUnderlines(value),
+      })),
+    [],
+  );
 
-    if (!tecnicoIds.includes(tecnicoResponsableId)) {
-      setField("tecnicoResponsableId", null, {
-        shouldValidate: true,
-      });
-    }
-  }, [tecnicoIds, tecnicoResponsableId, setField]);
+  const metodoAutenticacionOptions = useMemo(
+    () =>
+      Object.values(MetodoAutenticacionInternet).map((value) => ({
+        value,
+        label: ReplaceUnderlines(value),
+      })),
+    [],
+  );
 
   /*
    * Submit
@@ -184,7 +182,6 @@ function InstalacionesMainPage() {
     createConfirm.confirm(async (values) => {
       const payload = toCrearInstalacionPayload(values, {
         empresaId,
-        creadoPorId,
       });
 
       const mutationPromise = createInstalacion.mutateAsync(payload);
@@ -194,10 +191,13 @@ function InstalacionesMainPage() {
 
         error: (error) => getApiErrorMessageAxios(error),
 
-        success: () => {
-          reset(CREAR_INSTALACION_DEFAULT_VALUES);
+        success: (response) => {
+          form.reset(CREAR_INSTALACION_DEFAULT_VALUES);
 
-          return "Instalación registrada";
+          return response.prealtaPppoe.estado ===
+            EstadoResultadoPrealtaPppoe.FALLIDA
+            ? "Instalación creada; la prealta PPPoE quedó pendiente de reintento"
+            : "Instalación registrada";
         },
       });
     });
@@ -214,13 +214,16 @@ function InstalacionesMainPage() {
               servicioOptions={servicioOptions}
               ticketOptions={ticketOptions}
               tecnicoOptions={tecnicoOptions}
-              tecnicoResponsableOptions={tecnicoResponsableOptions}
+              routerOptions={routerOptions}
               tipoOptions={tipoOptions}
               estadoOptions={estadoOptions}
+              tecnologiaOptions={tecnologiaOptions}
+              metodoAutenticacionOptions={metodoAutenticacionOptions}
               isLoadingClientes={isLoadingClientes}
               isLoadingServicios={isLoadingServicios}
               isLoadingTickets={isLoadingTickets}
               isLoadingTecnicos={isLoadingTecnicos}
+              isLoadingRouters={isLoadingRouters}
             />
           </AppCard>
         </AppStack>
@@ -235,6 +238,7 @@ function InstalacionesMainPage() {
           cancelText="Cancelar"
           loadingText="Creando instalación..."
           isLoading={createInstalacion.isPending}
+          preventClose={createInstalacion.isPending}
           onConfirm={handleConfirmCreate}
         />
       </AppContainer>

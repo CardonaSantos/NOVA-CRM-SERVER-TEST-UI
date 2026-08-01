@@ -46,4 +46,73 @@ export const crm_endpoints = {
 
     delete_ticket: (id: number) => `/tickets-soporte/delete-ticket/${id}`,
   },
+
+  // PPPoE
+  pppoe: {
+    // PREALTA Y CREDENCIALES DENTRO DE UNA INSTALACIÓN
+
+    post_reintentar_prealta: (
+      instalacionId: number,
+      accesoInternetId: number,
+    ) =>
+      `/cliente-instalaciones/${instalacionId}/accesos/${accesoInternetId}/prealta-pppoe/reintentar`,
+
+    post_revelar_credenciales: (instalacionId: number) =>
+      `/cliente-instalaciones/${instalacionId}/credenciales-pppoe/revelar`,
+
+    // FLUJO PPPoE DE INSTALACIÓN
+
+    post_iniciar_instalacion: (instalacionId: number) =>
+      `/cliente-instalaciones/iniciar/${instalacionId}`,
+
+    post_completar_instalacion: (instalacionId: number) =>
+      `/cliente-instalaciones/completar/${instalacionId}`,
+
+    // FLUJO PPPoE DE DESINSTALACIÓN
+
+    patch_iniciar_desinstalacion: (desinstalacionId: number) =>
+      `/cliente-desinstalaciones/${desinstalacionId}/iniciar`,
+
+    // ACCIONES MANUALES SOBRE CUENTAS PPPoE
+
+    post_suspender_cuenta: (cuentaPppoeId: number) =>
+      `/pppoe-cuentas/${cuentaPppoeId}/suspender`,
+
+    post_reactivar_cuenta: (cuentaPppoeId: number) =>
+      `/pppoe-cuentas/${cuentaPppoeId}/reactivar`,
+
+    // OPERACIONES PPPoE
+
+    get_operaciones_paginated: `/pppoe-operaciones`,
+
+    get_operacion: (operacionId: number, empresaId: number) =>
+      `/pppoe-operaciones/${operacionId}?empresaId=${empresaId}`,
+
+    post_autorizar_operacion: (operacionId: number) =>
+      `/pppoe-operaciones/${operacionId}/autorizar`,
+
+    post_reintentar_operacion: (operacionId: number) =>
+      `/pppoe-operaciones/${operacionId}/reintentar`,
+
+    post_recuperar_operacion: (operacionId: number) =>
+      `/pppoe-operaciones/${operacionId}/recuperar`,
+
+    post_cancelar_operacion: (operacionId: number) =>
+      `/pppoe-operaciones/${operacionId}/cancelar`,
+
+    // AUDITORÍA PPPoE
+
+    get_auditorias_paginated: `/pppoe-auditoria`,
+
+    // HOMOLOGACIONES
+    ppoe_perfil_homologacion: `/ppoe-perfil-homologacion`,
+
+    ppoe_perfil_homologacion_actualizar_codigo: (id: number) =>
+      `/ppoe-perfil-homologacion/${id ?? 0}/codigo-perfil`,
+
+    ppoe_perfil_homologacion_actualizar_estado: (
+      id: number,
+      action: "activar" | "desactivar",
+    ) => `/ppoe-perfil-homologacion/${id ?? 0}/${action}`,
+  },
 } as const;

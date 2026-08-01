@@ -63,6 +63,7 @@ import AppShowcasePage from "./components/testeos";
 import InstalacionesMainPage from "./Crm/Crm-instalaciones/page";
 import InstalacionesListPage from "./Crm/Crm-instalaciones/tabla/instalaciones-list-page";
 import InstalacionDetailPage from "./Crm/Crm-instalaciones/details/instalacion-detail-page";
+import PerfilesHomologacionPage from "./Crm/CrmHomologaciones/perfiles-homologacion-page";
 
 // COMENTARIO DE ULTIMO COMMIT
 
@@ -360,6 +361,11 @@ function App() {
           <Route
             path="/crm/instalacion/:instalacionId"
             element={adminRoute(<InstalacionDetailPage />)}
+          />
+
+          <Route
+            path="/crm/pppoe/homologacion-perfiles"
+            element={adminRoute(<PerfilesHomologacionPage />)}
           />
         </Route>
 

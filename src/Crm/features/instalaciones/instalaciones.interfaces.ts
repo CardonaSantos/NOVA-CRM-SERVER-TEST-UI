@@ -1,6 +1,11 @@
 import {
   EstadoInstalacionCliente,
+  EstadoCuentaPppoe,
+  EstadoResultadoPrealtaPppoe,
+  MetodoAutenticacionInternet,
+  ModoAccesoInstalacion,
   RolTecnicoOperacionCliente,
+  TecnologiaAccesoInternet,
   TipoEvidenciaClienteOperacion,
   TipoInstalacionCliente,
 } from "./enums";
@@ -258,4 +263,26 @@ export type ClienteInstalacionDetalle = ClienteInstalacionBase & {
   evidencias: ClienteInstalacionEvidenciaDetalle[];
 
   conteos: ClienteInstalacionConteos;
+};
+
+export type CrearClienteInstalacionResponse = {
+  detalle: ClienteInstalacionDetalle;
+  acceso: {
+    accesoInternetId: number;
+    modo: ModoAccesoInstalacion;
+    tecnologia: TecnologiaAccesoInternet;
+    metodoAutenticacion: MetodoAutenticacionInternet;
+    mikrotikRouterId: number | null;
+  };
+  prealtaPppoe: {
+    aplica: boolean;
+    estado: EstadoResultadoPrealtaPppoe;
+    cuentaPppoeId: number | null;
+    perfilHomologacionId: number | null;
+    usuario: string | null;
+    estadoCuenta: EstadoCuentaPppoe | null;
+    generadoEn: string | null;
+    mensaje: string | null;
+    reintentable: boolean;
+  };
 };
