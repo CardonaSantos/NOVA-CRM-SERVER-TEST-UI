@@ -25,6 +25,8 @@ import { INSTALACIONES_ROUTES } from "../filters/routes";
 import { InstalacionesTable } from "./instalaciones-tabla";
 import { createInstalacionesTableColumns } from "./instalaciones-table.columns";
 import { PageTransitionCrm } from "@/components/Layout/page-transition";
+import { useGetUsersToSelect } from "@/Crm/CrmHooks/hooks/useUsuarios/use-usuers";
+import { useGetServiciosWifi } from "@/Crm/CrmHooks/hooks/ServiciosWfi/useGetServiciosWifi";
 
 const EMPTY_ITEMS: ClienteInstalacionListItem[] = [];
 
@@ -46,6 +48,36 @@ function InstalacionesListPage() {
     initialDensity: "xs",
     resetPageOnSearch: true,
   });
+
+  const { data: usuarios = [], isLoading: isLoadingUsuarios } =
+    useGetUsersToSelect();
+
+  const { data: servicios = [], isLoading: isLoadingServicios } =
+    useGetServiciosWifi();
+
+  const asesorOptions = useMemo(
+    () =>
+      usuarios.map((usuario) => ({
+        value: usuario.id,
+        label: usuario.nombre,
+      })),
+    [usuarios],
+  );
+
+  const servicioOptions = useMemo(
+    () =>
+      servicios.map((servicio) => {
+        const velocidad = servicio.velocidad?.trim();
+
+        return {
+          value: servicio.id,
+          label: velocidad
+            ? `${servicio.nombre} · ${velocidad}`
+            : servicio.nombre,
+        };
+      }),
+    [servicios],
+  );
 
   const filters = useAppStateHandlers<InstalacionesListFiltersState>(
     INSTALACIONES_LIST_FILTERS_DEFAULT,
@@ -101,6 +133,8 @@ function InstalacionesListPage() {
     Boolean(table.search.trim()) ||
     filters.state.estado !== null ||
     filters.state.tipo !== null ||
+    filters.state.servicioInternetId !== null ||
+    filters.state.asesorId !== null ||
     filters.state.fechaProgramada.start !== null ||
     filters.state.fechaProgramada.end !== null ||
     filters.state.fechaFinalizacion.start !== null ||
@@ -124,6 +158,10 @@ function InstalacionesListPage() {
           <InstalacionesListFilters
             search={table.search}
             filters={filters.state}
+            asesorOptions={asesorOptions}
+            servicioOptions={servicioOptions}
+            isLoadingAsesores={isLoadingUsuarios}
+            isLoadingServicios={isLoadingServicios}
             isSearching={instalacionesQuery.isFetching}
             hasActiveFilters={hasActiveFilters}
             onSearchChange={table.handleSearchChange}

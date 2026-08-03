@@ -48,8 +48,7 @@ function InstalacionesMainPage() {
 
   const { data: routers = [], isLoading: isLoadingRouters } = useGetMikroTiks();
 
-  const { data: homologacionOptions = [], isLoading: isLoadingHomologaciones } =
-    useGetHomologacionesSelect();
+  const { data: homologacionOptions = [] } = useGetHomologacionesSelect();
 
   const {
     data: tickets = {

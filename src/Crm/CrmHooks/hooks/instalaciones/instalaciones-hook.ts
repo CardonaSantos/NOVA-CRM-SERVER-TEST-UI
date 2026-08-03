@@ -19,7 +19,7 @@ export function useGetInstalacionesPaginated(
   query: FiltrarClienteInstalacionesParams,
 ) {
   return crm.useQueryApi<ClienteInstalacionListResponse>(
-    instalacionesQkeys.all,
+    instalacionesQkeys.list(query),
     crm_endpoints.instalaciones.get_instalaciones_paginated,
     {
       params: query,

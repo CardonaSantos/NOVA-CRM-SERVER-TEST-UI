@@ -74,8 +74,6 @@ export function InstalacionCreateForm({
 
   tecnicoOptions,
 
-  routerOptions,
-
   tipoOptions,
 
   estadoOptions,

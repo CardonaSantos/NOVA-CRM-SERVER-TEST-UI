@@ -72,48 +72,56 @@ export type ClienteInstalacionUsuarioResumen = {
   activo: boolean;
 };
 
-export type ClienteInstalacionListItem = {
-  id: number;
-  empresaId: number;
-  clienteId: number;
+// export type ClienteInstalacionListItem = {
+//   id: number;
+//   empresaId: number;
+//   clienteId: number;
 
-  servicioInternetId: number | null;
-  ticketId: number | null;
+//   servicioInternetId: number | null;
+//   ticketId: number | null;
 
-  asesorId: number | null;
-  creadoPorId: number;
-  completadoPorId: number | null;
+//   asesorId: number | null;
+//   creadoPorId: number;
+//   completadoPorId: number | null;
 
-  tipo: TipoInstalacionCliente;
-  estado: EstadoInstalacionCliente;
+//   tipo: TipoInstalacionCliente;
+//   estado: EstadoInstalacionCliente;
 
-  fechaProgramada: string | null;
-  fechaInicio: string | null;
-  fechaFinalizacion: string | null;
-  fechaCancelacion: string | null;
-  fechaActivacionServicio: string | null;
+//   fechaProgramada: string | null;
+//   fechaInicio: string | null;
+//   fechaFinalizacion: string | null;
+//   fechaCancelacion: string | null;
+//   fechaActivacionServicio: string | null;
 
-  motivo: string | null;
-  observaciones: string | null;
-  resultado: string | null;
+//   motivo: string | null;
+//   observaciones: string | null;
+//   resultado: string | null;
 
-  ubicacion: ClienteInstalacionUbicacion;
-  wifi: ClienteInstalacionWifi;
-  costos: ClienteInstalacionCostos;
+//   ubicacion: ClienteInstalacionUbicacion;
+//   wifi: ClienteInstalacionWifi;
+//   costos: ClienteInstalacionCostos;
 
-  esMigrada: boolean;
+//   esMigrada: boolean;
 
-  creadoEn: string;
-  actualizadoEn: string;
+//   creadoEn: string;
+//   actualizadoEn: string;
 
+//   cliente: ClienteInstalacionCliente;
+
+//   servicioInternet: ClienteInstalacionServicioInternet | null;
+
+//   asesor: ClienteInstalacionUsuarioResumen | null;
+
+//   tecnicoResponsable: ClienteInstalacionTecnicoResponsable | null;
+
+//   conteos: ClienteInstalacionConteos;
+// };
+
+export type ClienteInstalacionListItem = ClienteInstalacionBase & {
   cliente: ClienteInstalacionCliente;
-
   servicioInternet: ClienteInstalacionServicioInternet | null;
-
   asesor: ClienteInstalacionUsuarioResumen | null;
-
   tecnicoResponsable: ClienteInstalacionTecnicoResponsable | null;
-
   conteos: ClienteInstalacionConteos;
 };
 
@@ -148,7 +156,7 @@ export type ClienteInstalacionBase = {
   ticketId: number | null;
 
   asesorId: number | null;
-  creadoPorId: number;
+  creadoPorId: number | null;
   completadoPorId: number | null;
 
   tipo: TipoInstalacionCliente;
@@ -165,16 +173,7 @@ export type ClienteInstalacionBase = {
   resultado: string | null;
 
   ubicacion: ClienteInstalacionUbicacion;
-  wifi: ClienteInstalacionWifi;
   costos: ClienteInstalacionCostos;
-
-  esMigrada: boolean;
-
-  /*
-   * El presenter lo incluye, pero JSON.stringify
-   * puede omitirlo cuando su valor es undefined.
-   */
-  metadata?: Record<string, unknown> | null;
 
   creadoEn: string;
   actualizadoEn: string;
@@ -253,15 +252,10 @@ export type ClienteInstalacionEvidenciaDetalle = {
 
 export type ClienteInstalacionDetalle = ClienteInstalacionBase & {
   cliente: ClienteInstalacionCliente;
-
   servicioInternet: ClienteInstalacionServicioInternet | null;
-
   participantes: ClienteInstalacionParticipantes;
-
   tecnicos: ClienteInstalacionTecnicoDetalle[];
-
   evidencias: ClienteInstalacionEvidenciaDetalle[];
-
   conteos: ClienteInstalacionConteos;
 };
 
