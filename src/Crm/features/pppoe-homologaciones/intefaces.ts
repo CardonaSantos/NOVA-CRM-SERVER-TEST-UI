@@ -69,16 +69,13 @@ export interface ListarPerfilesHomologacionParams {
 }
 
 export interface CrearPerfilHomologacionPayload {
-  empresaId: number;
   mikrotikRouterId: number;
   servicioInternetId: number;
   codigoPerfil: string;
-  creadoPorId: number;
 }
 
 export interface ActualizarCodigoPerfilPayload {
   codigoPerfil: string;
-  actualizadoPorId: number;
 }
 
 export interface CambiarEstadoPerfilPayload {
@@ -89,4 +86,41 @@ export interface PerfilHomologacionFilters {
   activo: boolean | null;
   mikrotikRouterId: number | null;
   servicioInternetId: number | null;
+}
+
+// SELECCIONABLES
+export interface PerfilHomologacionSeleccionable {
+  id: number;
+  codigoPerfil: string;
+
+  mikrotikRouterId: number;
+  servicioInternetId: number;
+
+  mikrotikRouter: {
+    id: number;
+    nombre: string;
+  };
+
+  servicioInternet: {
+    id: number;
+    nombre: string;
+    velocidad: string | null;
+    precio: number;
+  };
+}
+
+/**
+ * Respuesta real de:
+ * GET /pppoe-perfil-homologacion/seleccionables
+ */
+export type PerfilesHomologacionSeleccionablesResponse =
+  PerfilHomologacionSeleccionable[];
+
+/**
+ * Información adicional conservada dentro de cada opción del select.
+ */
+export interface PerfilHomologacionSelectMeta {
+  codigoPerfil: string;
+  mikrotikRouterId: number;
+  servicioInternetId: number;
 }

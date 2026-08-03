@@ -5,7 +5,7 @@ import { AppGrid } from "@/components/app/primitives/app-grid";
 import { AppInline } from "@/components/app/primitives/app-inline";
 import { AppSearchInput } from "@/components/app/primitives/app-search-input";
 import { AppSingleSelect } from "@/components/app/primitives/app-single-select";
-import { PerfilHomologacionFilters } from "@/Crm/features/pppoe-homologaciones/pppoe-homologaciones.types";
+import { PerfilHomologacionFilters } from "../../features/pppoe-homologaciones/intefaces";
 
 type Option = { value: number; label: string };
 

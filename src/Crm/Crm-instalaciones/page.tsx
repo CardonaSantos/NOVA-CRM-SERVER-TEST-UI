@@ -30,8 +30,9 @@ import {
   CREAR_INSTALACION_DEFAULT_VALUES,
   CrearInstalacionFormValues,
   crearInstalacionSchema,
-} from "./schema/zod.schema";
+} from "../CrmHomologaciones/schema/schema";
 import { toCrearInstalacionPayload } from "./common/crear-instalaciones.mapper";
+import { useGetHomologacionesSelect } from "../CrmHooks/hooks/pppoe-homologaciones/pppoe-perfil-homologaciones";
 
 function InstalacionesMainPage() {
   const empresaId = useStoreCrm((state) => state.empresaId) ?? 0;
@@ -46,6 +47,9 @@ function InstalacionesMainPage() {
     useGetServiciosWifi();
 
   const { data: routers = [], isLoading: isLoadingRouters } = useGetMikroTiks();
+
+  const { data: homologacionOptions = [], isLoading: isLoadingHomologaciones } =
+    useGetHomologacionesSelect();
 
   const {
     data: tickets = {
@@ -172,21 +176,63 @@ function InstalacionesMainPage() {
    * Submit
    */
 
+  const resolveHomologacionSeleccionada = (
+    values: CrearInstalacionFormValues,
+  ) => {
+    const perfilHomologacionId = values.acceso.perfilHomologacionId;
+
+    if (perfilHomologacionId === null) {
+      return null;
+    }
+
+    const option = homologacionOptions.find(
+      (item) => item.value === perfilHomologacionId,
+    );
+
+    if (!option?.meta) {
+      return null;
+    }
+
+    return {
+      id: option.value,
+      ...option.meta,
+    };
+  };
+
   const createConfirm = useAppConfirmHandler<CrearInstalacionFormValues>();
 
   const onSubmit: SubmitHandler<CrearInstalacionFormValues> = (values) => {
+    const requierePrealtaPppoe =
+      values.acceso.tecnologia === TecnologiaAccesoInternet.FIBRA_GPON &&
+      values.acceso.metodoAutenticacion === MetodoAutenticacionInternet.PPPOE;
+
+    const homologacionSeleccionada = resolveHomologacionSeleccionada(values);
+
+    if (requierePrealtaPppoe && !homologacionSeleccionada) {
+      form.setError("acceso.perfilHomologacionId", {
+        type: "manual",
+        message:
+          "La homologación seleccionada ya no está disponible. Selecciónela nuevamente.",
+      });
+
+      return;
+    }
+
+    form.clearErrors("acceso.perfilHomologacionId");
+
     createConfirm.open(values);
   };
 
   const handleConfirmCreate = () =>
     createConfirm.confirm(async (values) => {
+      const homologacionSeleccionada = resolveHomologacionSeleccionada(values);
+
       const payload = toCrearInstalacionPayload(values, {
         empresaId,
+        homologacionSeleccionada,
       });
 
-      const mutationPromise = createInstalacion.mutateAsync(payload);
-
-      await toast.promise(mutationPromise, {
+      await toast.promise(createInstalacion.mutateAsync(payload), {
         loading: "Registrando instalación...",
 
         error: (error) => getApiErrorMessageAxios(error),
@@ -224,6 +270,7 @@ function InstalacionesMainPage() {
               isLoadingTickets={isLoadingTickets}
               isLoadingTecnicos={isLoadingTecnicos}
               isLoadingRouters={isLoadingRouters}
+              homologacionOptions={homologacionOptions}
             />
           </AppCard>
         </AppStack>

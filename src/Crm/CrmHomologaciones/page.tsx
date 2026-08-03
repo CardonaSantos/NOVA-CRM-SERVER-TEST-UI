@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
-
 import { PageTransitionCrm } from "@/components/Layout/page-transition";
 import {
   useAppConfirmHandler,
@@ -30,23 +29,28 @@ import { getApiErrorMessageAxios } from "@/utils/getApiAxiosMessage";
 import {
   PerfilHomologacionFilters,
   PerfilHomologacionListItem,
-} from "../features/pppoe-homologaciones/pppoe-homologaciones.types";
-import {
-  useActualizarCodigoPerfil,
-  useCambiarEstadoPerfil,
-  useCrearPerfilHomologacion,
-  usePerfilesHomologacion,
-} from "../CrmHooks/hooks/pppoe-homologaciones/pppoe-perfil-homologaciones";
+} from "../features/pppoe-homologaciones/intefaces";
+
 import {
   ActualizarCodigoPerfilFormValues,
   actualizarCodigoPerfilSchema,
   CREAR_PERFIL_HOMOLOGACION_DEFAULTS,
   CrearPerfilHomologacionFormValues,
   crearPerfilHomologacionSchema,
-} from "./schema/homologacion.schema";
+} from "./schema/schema";
 import { PerfilHomologacionForm } from "./form/perfil-homologacion-form";
 import { PerfilesFilters } from "./filters/perfiles-filters";
 import { PerfilesTable } from "./table/perfiles-table";
+import {
+  toActualizarCodigoPerfilPayload,
+  toCrearPerfilHomologacionPayload,
+} from "./common/mapper";
+import {
+  useActualizarCodigoPerfil,
+  useCambiarEstadoPerfil,
+  useCrearPerfilHomologacion,
+  usePerfilesHomologacion,
+} from "@/Crm/CrmHooks/hooks/pppoe-homologaciones/pppoe-perfil-homologaciones";
 
 const FILTER_DEFAULTS: PerfilHomologacionFilters = {
   activo: null,
@@ -150,19 +154,14 @@ export default function PerfilesHomologacionPage() {
   const handleCreate = () =>
     createConfirm.confirm(async (values) => {
       await toast.promise(
-        createMutation.mutateAsync({
-          empresaId,
-          creadoPorId: userId,
-          mikrotikRouterId: values.mikrotikRouterId,
-          servicioInternetId: values.servicioInternetId,
-          codigoPerfil: values.codigoPerfil.trim(),
-        }),
+        createMutation.mutateAsync(toCrearPerfilHomologacionPayload(values)),
         {
           loading: "Registrando homologación...",
           success: "Homologación registrada",
           error: (error) => getApiErrorMessageAxios(error),
         },
       );
+
       createForm.reset(CREAR_PERFIL_HOMOLOGACION_DEFAULTS);
     });
 
@@ -174,16 +173,14 @@ export default function PerfilesHomologacionPage() {
   const handleEdit = () =>
     editConfirm.confirm(async (values) => {
       await toast.promise(
-        updateMutation.mutateAsync({
-          codigoPerfil: values.codigoPerfil.trim(),
-          actualizadoPorId: userId,
-        }),
+        updateMutation.mutateAsync(toActualizarCodigoPerfilPayload(values)),
         {
           loading: "Actualizando código...",
           success: "Código actualizado",
           error: (error) => getApiErrorMessageAxios(error),
         },
       );
+
       setEditing(null);
     });
 
@@ -223,7 +220,7 @@ export default function PerfilesHomologacionPage() {
 
   return (
     <PageTransitionCrm titleHeader="Homologación de planes" variant="fade-pure">
-      <AppContainer size="full" paddingX="none" paddingY="none">
+      <AppContainer size="xl" paddingX="sm" paddingY="sm">
         <AppStack gap="md">
           <AppCard
             size="xs"

@@ -21,7 +21,8 @@ import {
 } from "@/Crm/features/instalaciones/enums";
 import { InstalacionAccesoSection } from "./instalacion-acceso-section";
 import { InstalacionTecnicosSection } from "./instalacion-tecnicos-section";
-import { CrearInstalacionFormValues } from "../schema/zod.schema";
+import { CrearInstalacionFormValues } from "@/Crm/CrmHomologaciones/schema/schema";
+import { PerfilHomologacionSelectMeta } from "@/Crm/features/pppoe-homologaciones/intefaces";
 
 type InstalacionCreateFormProps = {
   form: UseFormReturn<CrearInstalacionFormValues>;
@@ -55,6 +56,10 @@ type InstalacionCreateFormProps = {
   isLoadingTecnicos?: boolean;
 
   isLoadingRouters?: boolean;
+
+  homologacionOptions: AppSelectOption<number, PerfilHomologacionSelectMeta>[];
+
+  isLoadingHomologaciones?: boolean;
 };
 
 export function InstalacionCreateForm({
@@ -87,7 +92,9 @@ export function InstalacionCreateForm({
 
   isLoadingTecnicos = false,
 
-  isLoadingRouters = false,
+  homologacionOptions,
+
+  isLoadingHomologaciones,
 }: InstalacionCreateFormProps) {
   return (
     <AppForm form={form} onSubmit={onSubmit}>
@@ -137,6 +144,7 @@ export function InstalacionCreateForm({
                   isSearchable
                   isLoading={isLoadingServicios}
                   isClearable
+                  isDisabled
                 />
 
                 <AppFormSingleSelect<CrearInstalacionFormValues, number>
@@ -214,10 +222,9 @@ export function InstalacionCreateForm({
           <InstalacionAccesoSection
             tecnologiaOptions={tecnologiaOptions}
             metodoAutenticacionOptions={metodoAutenticacionOptions}
-            routerOptions={routerOptions}
-            isLoadingRouters={isLoadingRouters}
+            homologacionOptions={homologacionOptions}
+            isLoadingHomologaciones={isLoadingHomologaciones}
           />
-
           <AppSeparator />
 
           {/* Programación */}
@@ -375,7 +382,7 @@ export function InstalacionCreateForm({
                   inputMode="decimal"
                 />
 
-                <AppFormInput<CrearInstalacionFormValues>
+                {/* <AppFormInput<CrearInstalacionFormValues>
                   name="costos.montoCobradoCliente"
                   label="Monto cobrado al cliente"
                   placeholder="0.00"
@@ -387,7 +394,7 @@ export function InstalacionCreateForm({
                   label="Saldo pendiente"
                   placeholder="0.00"
                   inputMode="decimal"
-                />
+                /> */}
               </AppGrid>
 
               <AppFormTextarea<CrearInstalacionFormValues>

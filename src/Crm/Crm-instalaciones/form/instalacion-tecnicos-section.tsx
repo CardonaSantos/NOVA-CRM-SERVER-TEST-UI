@@ -52,9 +52,6 @@ export function InstalacionTecnicosSection({
           <h2 id="instalacion-tecnicos-title" className="text-base font-medium">
             Técnicos
           </h2>
-          <p className="text-sm text-muted-foreground">
-            Asigna uno o varios técnicos y define un responsable.
-          </p>
         </div>
 
         <AppGrid cols={{ base: 1, md: 2 }} gap="sm">

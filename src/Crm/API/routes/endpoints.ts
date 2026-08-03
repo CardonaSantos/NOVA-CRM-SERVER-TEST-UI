@@ -114,5 +114,7 @@ export const crm_endpoints = {
       id: number,
       action: "activar" | "desactivar",
     ) => `/ppoe-perfil-homologacion/${id ?? 0}/${action}`,
+
+    ppoe_perfil_homologacion_seleccionables: "/ppoe-perfil-homologacion/select",
   },
 } as const;

@@ -1,4 +1,4 @@
-import type { ListarPerfilesHomologacionParams } from "@/Crm/features/pppoe-homologaciones/pppoe-homologaciones.types";
+import { ListarPerfilesHomologacionParams } from "@/Crm/features/pppoe-homologaciones/intefaces";
 
 export const pppoe_homologacionesQk = {
   all: ["pppoe-perfil-homologacion"] as const,
