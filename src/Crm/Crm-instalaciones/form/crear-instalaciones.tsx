@@ -379,20 +379,6 @@ export function InstalacionCreateForm({
                   placeholder="0.00"
                   inputMode="decimal"
                 />
-
-                {/* <AppFormInput<CrearInstalacionFormValues>
-                  name="costos.montoCobradoCliente"
-                  label="Monto cobrado al cliente"
-                  placeholder="0.00"
-                  inputMode="decimal"
-                />
-
-                <AppFormInput<CrearInstalacionFormValues>
-                  name="costos.saldoPendiente"
-                  label="Saldo pendiente"
-                  placeholder="0.00"
-                  inputMode="decimal"
-                /> */}
               </AppGrid>
 
               <AppFormTextarea<CrearInstalacionFormValues>

@@ -27,8 +27,16 @@ export type ClienteInstalacionCostos = {
   costoManoObra: number;
   costoOtros: number;
   montoCobradoCliente: number;
-  saldoPendiente: number;
   notas: string | null;
+};
+
+export type ClienteInstalacionTicketResumen = {
+  id: number;
+  titulo: string | null;
+  estado: string;
+  prioridad: string;
+  fechaApertura: string;
+  fechaCierre: string | null;
 };
 
 export type ClienteInstalacionCliente = {
@@ -172,6 +180,8 @@ export type ClienteInstalacionBase = {
   observaciones: string | null;
   resultado: string | null;
 
+  descripcion: string | null;
+
   ubicacion: ClienteInstalacionUbicacion;
   costos: ClienteInstalacionCostos;
 
@@ -253,6 +263,7 @@ export type ClienteInstalacionEvidenciaDetalle = {
 export type ClienteInstalacionDetalle = ClienteInstalacionBase & {
   cliente: ClienteInstalacionCliente;
   servicioInternet: ClienteInstalacionServicioInternet | null;
+  ticket: ClienteInstalacionTicketResumen | null;
   participantes: ClienteInstalacionParticipantes;
   tecnicos: ClienteInstalacionTecnicoDetalle[];
   evidencias: ClienteInstalacionEvidenciaDetalle[];

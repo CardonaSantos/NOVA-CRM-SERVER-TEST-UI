@@ -64,6 +64,8 @@ import InstalacionesMainPage from "./Crm/Crm-instalaciones/page";
 import InstalacionesListPage from "./Crm/Crm-instalaciones/tabla/instalaciones-list-page";
 import InstalacionDetailPage from "./Crm/Crm-instalaciones/details/instalacion-detail-page";
 import PerfilesHomologacionPage from "./Crm/CrmHomologaciones/page";
+import TecnicoInstalacionesPage from "./Crm/CrmTecInstalaciones/page";
+import TecnicoInstalacionDetallePage from "./Crm/CrmInstalacionesDetalle/TecnicoInstalacionDetallePage";
 
 // COMENTARIO DE ULTIMO COMMIT
 
@@ -364,8 +366,18 @@ function App() {
           />
 
           <Route
+            path="/crm/instalaciones/tecnico"
+            element={crmRoute(<TecnicoInstalacionesPage />)}
+          />
+
+          <Route
             path="/crm/pppoe/homologacion-perfiles"
             element={adminRoute(<PerfilesHomologacionPage />)}
+          />
+
+          <Route
+            path="/crm/instalacion/detalle-tecnico/:instalacionId"
+            element={adminRoute(<TecnicoInstalacionDetallePage />)}
           />
         </Route>
 

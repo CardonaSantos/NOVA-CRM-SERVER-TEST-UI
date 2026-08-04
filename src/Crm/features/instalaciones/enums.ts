@@ -5,6 +5,25 @@
 //   COBRADOR = "COBRADOR",
 //   OTRO = "OTRO",
 // }
+export enum BandaWifi {
+  GHZ_2_4 = "GHZ_2_4",
+  GHZ_5 = "GHZ_5",
+  DOBLE_BANDA = "DOBLE_BANDA",
+}
+
+export enum EstadoAccesoInternet {
+  PENDIENTE = "PENDIENTE",
+  CONFIGURANDO = "CONFIGURANDO",
+  ACTIVO = "ACTIVO",
+  SUSPENDIDO = "SUSPENDIDO",
+  BAJA = "BAJA",
+}
+
+export enum AccionInstalacionAcceso {
+  CREADO = "CREADO",
+  MODIFICADO = "MODIFICADO",
+  RETIRADO = "RETIRADO",
+}
 
 export enum EstadoInstalacionCliente {
   PROGRAMADA = "PROGRAMADA",

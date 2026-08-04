@@ -1,36 +1,39 @@
 import type { ReactNode } from "react";
-import { MapPin } from "lucide-react";
+import { ClipboardList, History, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { AppBadge } from "@/components/app/primitives/app-badge";
 import { AppButton } from "@/components/app/primitives/app-button";
 import { AppCard } from "@/components/app/primitives/app-card";
+import { AppEmptyState } from "@/components/app/primitives/app-empty-state";
 import { AppGrid } from "@/components/app/primitives/app-grid";
 import { AppInline } from "@/components/app/primitives/app-inline";
 import { AppSeparator } from "@/components/app/primitives/app-separator";
 import { AppStack } from "@/components/app/primitives/app-stack";
+import { AppTabs } from "@/components/app/primitives/app-tabs";
+import { formattMonedaGT } from "@/Crm/Utils/formattMonedaGT";
 
 import type {
   ClienteInstalacionDetalle,
   ClienteInstalacionUsuarioResumen,
 } from "@/Crm/features/instalaciones/instalaciones.interfaces";
 
+import { InstalacionEvidenciasUploadPage } from "../evidencia/payload-evidencias";
+import { InstalacionEvidenceGallery } from "./instalacion-evidence";
 import { InstalacionUserAvatar } from "./instalacion-user-avatar";
 import {
+  formatAuditDate,
+  formatBusinessDate,
   getClienteNombre,
   getEstadoToneInstalacion,
   getGoogleMapsUrl,
   getTotalCostos,
   humanizeEnum,
 } from "./instalacion-utils.utils";
-import { formattMonedaGT } from "@/Crm/Utils/formattMonedaGT";
-import { formattShortFecha } from "@/utils/formattFechas";
-import { InstalacionEvidenceGallery } from "./instalacion-evidence";
-import { InstalacionEvidenciasUploadPage } from "../evidencia/payload-evidencias";
-import { useStoreCrm } from "@/Crm/ZustandCrm/ZustandCrmContext";
 
-type InstalacionDetailViewProps = {
+type Props = {
   instalacion: ClienteInstalacionDetalle;
+  empresaId: number;
   onOpenEvidence: (index: number) => void;
 };
 
@@ -46,7 +49,6 @@ type DetailItemProps = {
 };
 
 const mutedTextClass = "text-[hsl(var(--app-muted-foreground))]";
-
 const linkTextClass = "text-[hsl(var(--app-primary))] hover:underline";
 
 function DetailSection({ title, description, children }: DetailSectionProps) {
@@ -54,20 +56,25 @@ function DetailSection({ title, description, children }: DetailSectionProps) {
     <AppCard variant="outline" size="xs" radius="md" className="p-2">
       <AppStack gap="xs">
         <div className="px-1 pt-1">
-          <p className="text-sm font-semibold leading-tight">{title}</p>
-
+          <h2 className="text-sm font-semibold leading-tight">{title}</h2>
           {description ? (
             <p className={`mt-0.5 text-xs leading-snug ${mutedTextClass}`}>
               {description}
             </p>
           ) : null}
         </div>
-
         <AppSeparator size="xs" spacing="xs" />
-
         <div className="px-1 pb-1">{children}</div>
       </AppStack>
     </AppCard>
+  );
+}
+
+function EmptyValue({ label = "Sin registrar" }: { label?: string }) {
+  return (
+    <span className={`text-xs font-normal italic ${mutedTextClass}`}>
+      {label}
+    </span>
   );
 }
 
@@ -75,96 +82,55 @@ function DetailItem({ label, value }: DetailItemProps) {
   return (
     <div className="min-w-0">
       <dt className={`text-[11px] leading-tight ${mutedTextClass}`}>{label}</dt>
-
       <dd className="mt-0.5 break-words text-xs font-medium leading-snug">
-        {value ?? "Sin registrar"}
+        {value ?? <EmptyValue />}
       </dd>
     </div>
   );
 }
 
-function EmptyValue() {
-  return (
-    <span className={`text-xs font-normal italic ${mutedTextClass}`}>
-      Sin registrar
-    </span>
-  );
-}
-
-type MetricCardProps = {
+function MetricCard({
+  label,
+  value,
+  description,
+}: {
   label: string;
   value: ReactNode;
   description: string;
-};
-
-function MetricCard({ label, value, description }: MetricCardProps) {
+}) {
   return (
-    <AppCard
-      variant="outline"
-      size="xs"
-      radius="md"
-      className="p-2"
-      title={description}
-    >
-      <AppInline
-        justify="between"
-        align="center"
-        gap="xs"
-        wrap={false}
-        fullWidth
-      >
-        <div className="min-w-0 px-1">
-          <span
-            className={`block truncate text-[11px] leading-tight ${mutedTextClass}`}
-          >
-            {label}
-          </span>
-
-          <span
-            className={`mt-0.5 hidden truncate text-[10px] leading-tight sm:block ${mutedTextClass}`}
-          >
-            {description}
-          </span>
-        </div>
-
-        <strong className="shrink-0 whitespace-nowrap px-1 text-base font-semibold leading-none tabular-nums">
+    <AppCard variant="outline" size="xs" radius="md" className="p-2">
+      <div className="min-w-0 px-1">
+        <span className={`block text-[11px] leading-tight ${mutedTextClass}`}>
+          {label}
+        </span>
+        <strong className="mt-1 block truncate text-base font-semibold leading-none tabular-nums">
           {value}
         </strong>
-      </AppInline>
+        <span
+          className={`mt-1 hidden text-[10px] leading-tight sm:block ${mutedTextClass}`}
+        >
+          {description}
+        </span>
+      </div>
     </AppCard>
   );
 }
 
-type UserRowProps = {
+function UserRow({
+  label,
+  user,
+}: {
   label: string;
   user: ClienteInstalacionUsuarioResumen | null;
-};
-
-function UserRow({ label, user }: UserRowProps) {
+}) {
   return (
-    <div
-      className={[
-        "min-w-0",
-        "rounded-[var(--app-radius-sm)]",
-        "border border-[hsl(var(--app-border))]",
-        "p-2",
-      ].join(" ")}
-    >
-      <AppInline
-        justify="between"
-        align="center"
-        gap="xs"
-        wrap={false}
-        fullWidth
+    <div className="min-w-0 rounded-[var(--app-radius-sm)] border border-[hsl(var(--app-border))] p-2">
+      <p
+        className={`truncate text-[10px] font-medium uppercase tracking-wide ${mutedTextClass}`}
       >
-        <p
-          className={`min-w-0 truncate text-[10px] font-medium uppercase tracking-wide ${mutedTextClass}`}
-          title={label}
-        >
-          {label}
-        </p>
-      </AppInline>
-
+        {label}
+      </p>
       {user ? (
         <AppInline
           align="center"
@@ -174,17 +140,13 @@ function UserRow({ label, user }: UserRowProps) {
           className="mt-1"
         >
           <InstalacionUserAvatar user={user} size="sm" />
-
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-semibold" title={user.nombre}>
               {user.nombre}
             </p>
-
-            {!user.telefono && !user.correo ? (
-              <p className={`text-[11px] ${mutedTextClass}`}>
-                Sin información de contacto
-              </p>
-            ) : null}
+            <p className={`truncate text-[11px] ${mutedTextClass}`}>
+              {user.telefono || user.correo || "Sin contacto"}
+            </p>
           </div>
         </AppInline>
       ) : (
@@ -195,90 +157,35 @@ function UserRow({ label, user }: UserRowProps) {
     </div>
   );
 }
-export function InstalacionDetailView({
-  instalacion,
-  onOpenEvidence,
-}: InstalacionDetailViewProps) {
-  const clienteNombre = getClienteNombre(instalacion);
 
+function InstalacionGeneralTab({
+  instalacion,
+  empresaId,
+  onOpenEvidence,
+}: Props) {
+  const clienteNombre = getClienteNombre(instalacion);
   const hasCoordinates =
     instalacion.ubicacion.latitud != null &&
     instalacion.ubicacion.longitud != null;
 
-  const empresaId = useStoreCrm((state) => state.empresaId) ?? 0;
   return (
-    <AppStack gap="md">
-      <AppInline
-        justify="between"
-        align="start"
-        collapseBelow="sm"
-        gap="sm"
-        fullWidth
-      >
-        <AppInline align="start" gap="sm" wrap={false}>
-          <div className="min-w-0">
-            <AppInline align="center" gap="xs" wrap>
-              <p>Instalación #{instalacion.id}</p>
-
-              <AppBadge
-                tone={getEstadoToneInstalacion(instalacion.estado)}
-                appearance="soft"
-                size="xs"
-                radius="full"
-              >
-                {humanizeEnum(instalacion.estado)}
-              </AppBadge>
-
-              <AppBadge
-                tone="neutral"
-                appearance="soft"
-                size="xs"
-                radius="full"
-              >
-                {humanizeEnum(instalacion.tipo)}
-              </AppBadge>
-            </AppInline>
-
-            <p className={`truncate text-sm ${mutedTextClass}`}>
-              {clienteNombre}
-            </p>
-          </div>
-        </AppInline>
-
-        <AppButton variant="outline" size="sm">
-          <Link to={`/crm/cliente/${instalacion.cliente.id}/?tab=resumen`}>
-            Ver cliente
-          </Link>
-        </AppButton>
-      </AppInline>
-
-      {/* Métricas disponibles */}
-
-      <AppGrid
-        cols={{
-          base: 2,
-          lg: 4,
-        }}
-        gap="xs"
-      >
+    <AppStack gap="sm">
+      <AppGrid cols={{ base: 2, lg: 4 }} gap="xs">
         <MetricCard
-          label="Costos registrados"
+          label="Costo interno"
           value={formattMonedaGT(getTotalCostos(instalacion))}
-          description="Instalación, materiales y mano de obra"
+          description="Suma de los costos registrados"
         />
-
         <MetricCard
-          label="Saldo pendiente"
-          value={formattMonedaGT(instalacion.costos.saldoPendiente)}
-          description="Saldo registrado en la instalación"
+          label="Cobrado al cliente"
+          value={formattMonedaGT(instalacion.costos.montoCobradoCliente)}
+          description="Monto cobrado registrado"
         />
-
         <MetricCard
           label="Técnicos"
           value={instalacion.conteos.tecnicos}
           description="Asignaciones registradas"
         />
-
         <MetricCard
           label="Evidencias"
           value={instalacion.conteos.evidencias}
@@ -286,57 +193,31 @@ export function InstalacionDetailView({
         />
       </AppGrid>
 
-      {/* Contenido */}
-
-      <AppGrid
-        cols={{
-          base: 1,
-          xl: 3,
-        }}
-        gap="sm"
-      >
+      <AppGrid cols={{ base: 1, xl: 3 }} gap="sm">
         <AppStack gap="sm" className="xl:col-span-2">
           <DetailSection
-            title="Información de la instalación"
-            description="Motivo, observaciones y resultado operativo."
+            title="Trabajo solicitado"
+            description="Descripción, motivo y resultado de la instalación."
           >
             <dl>
-              <AppGrid
-                cols={{
-                  base: 1,
-                  md: 2,
-                }}
-                gap="xs"
-              >
+              <AppGrid cols={{ base: 1, md: 2 }} gap="sm">
+                <DetailItem
+                  label="Descripción"
+                  value={instalacion.descripcion || <EmptyValue />}
+                />
                 <DetailItem
                   label="Motivo"
                   value={instalacion.motivo || <EmptyValue />}
                 />
-
-                <DetailItem
-                  label="Ticket relacionado"
-                  value={
-                    instalacion.ticketId != null ? (
-                      `#${instalacion.ticketId}`
-                    ) : (
-                      <EmptyValue />
-                    )
-                  }
-                />
-
                 <DetailItem
                   label="Observaciones"
                   value={instalacion.observaciones || <EmptyValue />}
                 />
-
                 <DetailItem
                   label="Resultado"
-                  value={instalacion.resultado || <EmptyValue />}
-                />
-
-                <DetailItem
-                  label="SSID"
-                  value={instalacion.wifi.ssid || <EmptyValue />}
+                  value={
+                    instalacion.resultado || <EmptyValue label="Pendiente" />
+                  }
                 />
               </AppGrid>
             </dl>
@@ -344,39 +225,31 @@ export function InstalacionDetailView({
 
           <DetailSection
             title="Programación y seguimiento"
-            description="Fechas operativas asociadas con el registro."
+            description="Fechas operativas asociadas al registro."
           >
             <dl>
-              <AppGrid
-                cols={{
-                  base: 2,
-                  lg: 3,
-                }}
-                gap="sm"
-              >
+              <AppGrid cols={{ base: 2, lg: 3 }} gap="sm">
                 <DetailItem
-                  label="Fecha programada"
-                  value={formattShortFecha(instalacion.fechaProgramada)}
+                  label="Programada"
+                  value={formatBusinessDate(instalacion.fechaProgramada)}
                 />
-
                 <DetailItem
-                  label="Fecha de inicio"
-                  value={formattShortFecha(instalacion.fechaInicio)}
+                  label="Inicio"
+                  value={formatBusinessDate(instalacion.fechaInicio)}
                 />
-
                 <DetailItem
-                  label="Fecha de finalización"
-                  value={formattShortFecha(instalacion.fechaFinalizacion)}
+                  label="Finalización"
+                  value={formatBusinessDate(instalacion.fechaFinalizacion)}
                 />
-
                 <DetailItem
-                  label="Fecha de cancelación"
-                  value={formattShortFecha(instalacion.fechaCancelacion)}
+                  label="Cancelación"
+                  value={formatBusinessDate(instalacion.fechaCancelacion)}
                 />
-
                 <DetailItem
                   label="Activación del servicio"
-                  value={formattShortFecha(instalacion.fechaActivacionServicio)}
+                  value={formatBusinessDate(
+                    instalacion.fechaActivacionServicio,
+                  )}
                 />
               </AppGrid>
             </dl>
@@ -384,51 +257,29 @@ export function InstalacionDetailView({
 
           <DetailSection
             title="Ubicación"
-            description="Dirección registrada y coordenadas de la instalación."
+            description="Dirección, referencia y coordenadas registradas."
           >
             <AppStack gap="sm">
               <dl>
-                <AppGrid
-                  cols={{
-                    base: 1,
-                    md: 2,
-                  }}
-                  gap="sm"
-                >
+                <AppGrid cols={{ base: 1, md: 2 }} gap="sm">
                   <DetailItem
                     label="Dirección"
                     value={instalacion.ubicacion.direccion || <EmptyValue />}
                   />
-
                   <DetailItem
                     label="Referencia"
                     value={instalacion.ubicacion.referencia || <EmptyValue />}
                   />
-
                   <DetailItem
                     label="Latitud"
-                    value={
-                      instalacion.ubicacion.latitud != null ? (
-                        instalacion.ubicacion.latitud
-                      ) : (
-                        <EmptyValue />
-                      )
-                    }
+                    value={instalacion.ubicacion.latitud ?? <EmptyValue />}
                   />
-
                   <DetailItem
                     label="Longitud"
-                    value={
-                      instalacion.ubicacion.longitud != null ? (
-                        instalacion.ubicacion.longitud
-                      ) : (
-                        <EmptyValue />
-                      )
-                    }
+                    value={instalacion.ubicacion.longitud ?? <EmptyValue />}
                   />
                 </AppGrid>
               </dl>
-
               {hasCoordinates ? (
                 <AppInline justify="end" fullWidth>
                   <AppButton asChild variant="outline" size="xs">
@@ -455,51 +306,40 @@ export function InstalacionDetailView({
           >
             <AppStack gap="sm">
               <dl>
-                <AppGrid
-                  cols={{
-                    base: 2,
-                    lg: 3,
-                  }}
-                  gap="sm"
-                >
+                <AppGrid cols={{ base: 2, lg: 3 }} gap="sm">
                   <DetailItem
                     label="Instalación"
                     value={formattMonedaGT(instalacion.costos.costoInstalacion)}
                   />
-
                   <DetailItem
                     label="Materiales"
                     value={formattMonedaGT(instalacion.costos.costoMateriales)}
                   />
-
                   <DetailItem
                     label="Mano de obra"
                     value={formattMonedaGT(instalacion.costos.costoManoObra)}
                   />
-
                   <DetailItem
-                    label="Otros costos"
+                    label="Otros"
                     value={formattMonedaGT(instalacion.costos.costoOtros)}
                   />
-
+                  <DetailItem
+                    label="Costo interno total"
+                    value={formattMonedaGT(getTotalCostos(instalacion))}
+                  />
                   <DetailItem
                     label="Cobrado al cliente"
                     value={formattMonedaGT(
                       instalacion.costos.montoCobradoCliente,
                     )}
                   />
-
-                  <DetailItem
-                    label="Saldo pendiente"
-                    value={formattMonedaGT(instalacion.costos.saldoPendiente)}
-                  />
                 </AppGrid>
               </dl>
-
               <div>
-                <p className={`text-xs ${mutedTextClass}`}>Notas de costos</p>
-
-                <p className="mt-0.5 whitespace-pre-wrap text-sm">
+                <p className={`text-[11px] ${mutedTextClass}`}>
+                  Notas de costos
+                </p>
+                <p className="mt-0.5 whitespace-pre-wrap text-xs">
                   {instalacion.costos.notas || "Sin notas registradas"}
                 </p>
               </div>
@@ -512,10 +352,7 @@ export function InstalacionDetailView({
           />
         </AppStack>
 
-        {/* Columna lateral */}
-        <AppStack gap="xs">
-          {/* Cliente */}
-
+        <AppStack gap="sm">
           <DetailSection title="Cliente">
             <AppStack gap="xs">
               <AppInline
@@ -531,109 +368,123 @@ export function InstalacionDetailView({
                 >
                   {clienteNombre}
                 </p>
-
-                <span
-                  className={`shrink-0 whitespace-nowrap text-[11px] ${mutedTextClass}`}
-                >
+                <span className={`shrink-0 text-[11px] ${mutedTextClass}`}>
                   #{instalacion.cliente.id}
                 </span>
               </AppInline>
-
               <dl>
-                <AppStack gap="xs">
-                  <AppInline align="start" gap="md" wrap fullWidth>
-                    <DetailItem
-                      label="Teléfono"
-                      value={
-                        instalacion.cliente.telefono ? (
-                          <a
-                            href={`tel:${instalacion.cliente.telefono}`}
-                            className={linkTextClass}
-                          >
-                            {instalacion.cliente.telefono}
-                          </a>
-                        ) : (
-                          <EmptyValue />
-                        )
-                      }
-                    />
-
-                    <DetailItem
-                      label="DPI"
-                      value={instalacion.cliente.dpi || <EmptyValue />}
-                    />
-                  </AppInline>
-
+                <AppGrid cols={{ base: 2 }} gap="xs">
+                  <DetailItem
+                    label="Teléfono"
+                    value={
+                      instalacion.cliente.telefono ? (
+                        <a
+                          href={`tel:${instalacion.cliente.telefono}`}
+                          className={linkTextClass}
+                        >
+                          {instalacion.cliente.telefono}
+                        </a>
+                      ) : (
+                        <EmptyValue />
+                      )
+                    }
+                  />
+                  <DetailItem
+                    label="DPI"
+                    value={instalacion.cliente.dpi || <EmptyValue />}
+                  />
+                </AppGrid>
+                <div className="mt-2">
                   <DetailItem
                     label="Dirección"
                     value={instalacion.cliente.direccion || <EmptyValue />}
                   />
-                </AppStack>
+                </div>
               </dl>
             </AppStack>
           </DetailSection>
 
-          {/* Servicio */}
-
           <DetailSection title="Servicio">
             {instalacion.servicioInternet ? (
               <dl>
-                <AppStack gap="xs">
-                  <AppInline
-                    align="start"
-                    justify="between"
-                    gap="md"
-                    wrap
-                    fullWidth
-                  >
-                    <DetailItem
-                      label="Plan"
-                      value={instalacion.servicioInternet.nombre}
-                    />
-
-                    <DetailItem
-                      label="Precio"
-                      value={
-                        instalacion.servicioInternet.precio != null ? (
-                          formattMonedaGT(instalacion.servicioInternet.precio)
-                        ) : (
-                          <EmptyValue />
-                        )
-                      }
-                    />
-                  </AppInline>
-
+                <AppGrid cols={{ base: 2 }} gap="xs">
+                  <DetailItem
+                    label="Plan"
+                    value={instalacion.servicioInternet.nombre}
+                  />
+                  <DetailItem
+                    label="Precio"
+                    value={
+                      instalacion.servicioInternet.precio != null ? (
+                        formattMonedaGT(instalacion.servicioInternet.precio)
+                      ) : (
+                        <EmptyValue />
+                      )
+                    }
+                  />
                   <DetailItem
                     label="Velocidad"
                     value={
                       instalacion.servicioInternet.velocidad || <EmptyValue />
                     }
                   />
-                </AppStack>
+                </AppGrid>
               </dl>
             ) : (
-              <EmptyValue />
+              <EmptyValue label="Sin servicio asignado" />
             )}
           </DetailSection>
 
-          {/* Participantes en grid */}
+          <DetailSection title="Ticket relacionado">
+            {instalacion.ticket ? (
+              <dl>
+                <AppStack gap="xs">
+                  <AppInline
+                    justify="between"
+                    align="center"
+                    gap="xs"
+                    fullWidth
+                  >
+                    <span className="text-xs font-semibold">
+                      #{instalacion.ticket.id}
+                    </span>
+                    <AppBadge
+                      tone="warning"
+                      appearance="soft"
+                      size="xs"
+                      radius="full"
+                    >
+                      {humanizeEnum(instalacion.ticket.prioridad)}
+                    </AppBadge>
+                  </AppInline>
+                  <DetailItem
+                    label="Título"
+                    value={instalacion.ticket.titulo || <EmptyValue />}
+                  />
+                  <AppGrid cols={{ base: 2 }} gap="xs">
+                    <DetailItem
+                      label="Estado"
+                      value={humanizeEnum(instalacion.ticket.estado)}
+                    />
+                    <DetailItem
+                      label="Apertura"
+                      value={formatAuditDate(instalacion.ticket.fechaApertura)}
+                    />
+                  </AppGrid>
+                </AppStack>
+              </dl>
+            ) : (
+              <EmptyValue label="Sin ticket relacionado" />
+            )}
+          </DetailSection>
 
           <DetailSection title="Participantes">
-            <AppGrid
-              cols={{
-                base: 1,
-                sm: 2,
-              }}
-              gap="xs"
-              align="start"
-            >
+            <AppGrid cols={{ base: 1, sm: 2 }} gap="xs" align="start">
               <UserRow label="Asesor" user={instalacion.participantes.asesor} />
-
               <UserRow
                 label="Creado por"
                 user={instalacion.participantes.creadoPor}
               />
-
               <UserRow
                 label="Completado por"
                 user={instalacion.participantes.completadoPor}
@@ -641,27 +492,17 @@ export function InstalacionDetailView({
             </AppGrid>
           </DetailSection>
 
-          {/* Técnicos en grid */}
-
           <DetailSection
             title="Técnicos"
             description={`${instalacion.conteos.tecnicos} asignados`}
           >
             {instalacion.tecnicos.length === 0 ? (
-              <EmptyValue />
+              <EmptyValue label="Sin técnicos asignados" />
             ) : (
-              <AppGrid
-                cols={{
-                  base: 1,
-                  sm: 2,
-                }}
-                gap="xs"
-                align="start"
-              >
+              <AppGrid cols={{ base: 1, sm: 2 }} gap="xs" align="start">
                 {instalacion.tecnicos.map((asignacion) => {
                   const tecnico = asignacion.tecnico;
-
-                  const tecnicoNombre =
+                  const nombre =
                     tecnico?.nombre ??
                     asignacion.tecnicoNombreSnapshot ??
                     "Técnico no disponible";
@@ -669,31 +510,17 @@ export function InstalacionDetailView({
                   return (
                     <article
                       key={asignacion.id}
-                      className={[
-                        "min-w-0",
-                        "rounded-[var(--app-radius-sm)]",
-                        "border border-[hsl(var(--app-border))]",
-                        "p-2",
-                      ].join(" ")}
+                      className="min-w-0 rounded-[var(--app-radius-sm)] border border-[hsl(var(--app-border))] p-2"
                     >
                       <AppInline align="start" gap="xs" wrap={false} fullWidth>
                         <InstalacionUserAvatar user={tecnico} size="sm" />
-
                         <div className="min-w-0 flex-1">
-                          <AppInline
-                            justify="between"
-                            align="center"
-                            gap="xs"
-                            wrap={false}
-                            fullWidth
+                          <p
+                            className="truncate text-xs font-semibold"
+                            title={nombre}
                           >
-                            <p
-                              className="min-w-0 flex-1 truncate text-xs font-semibold"
-                              title={tecnicoNombre}
-                            >
-                              {tecnicoNombre}
-                            </p>
-                          </AppInline>
+                            {nombre}
+                          </p>
                           <AppBadge
                             tone={
                               asignacion.esResponsable ? "primary" : "neutral"
@@ -704,10 +531,14 @@ export function InstalacionDetailView({
                           >
                             {humanizeEnum(asignacion.rol)}
                           </AppBadge>
+                          {asignacion.tiempoMinutos != null ? (
+                            <p className={`mt-1 text-[11px] ${mutedTextClass}`}>
+                              {asignacion.tiempoMinutos} min registrados
+                            </p>
+                          ) : null}
                           {asignacion.observaciones ? (
                             <p
-                              className={`mt-0.5 line-clamp-1 text-[11px] ${mutedTextClass}`}
-                              title={asignacion.observaciones}
+                              className={`mt-1 line-clamp-2 text-[11px] ${mutedTextClass}`}
                             >
                               {asignacion.observaciones}
                             </p>
@@ -721,27 +552,18 @@ export function InstalacionDetailView({
             )}
           </DetailSection>
 
-          {/* Auditoría compacta */}
-
-          <DetailSection title="Fechas">
+          <DetailSection title="Registro">
             <dl>
-              <AppInline
-                align="start"
-                justify="between"
-                gap="md"
-                wrap
-                fullWidth
-              >
+              <AppGrid cols={{ base: 2 }} gap="xs">
                 <DetailItem
                   label="Creado"
-                  value={formattShortFecha(instalacion.creadoEn)}
+                  value={formatAuditDate(instalacion.creadoEn)}
                 />
-
                 <DetailItem
                   label="Actualizado"
-                  value={formattShortFecha(instalacion.actualizadoEn)}
+                  value={formatAuditDate(instalacion.actualizadoEn)}
                 />
-              </AppInline>
+              </AppGrid>
             </dl>
           </DetailSection>
         </AppStack>
@@ -750,6 +572,93 @@ export function InstalacionDetailView({
       <InstalacionEvidenciasUploadPage
         instalacionId={instalacion.id}
         empresaId={empresaId}
+      />
+    </AppStack>
+  );
+}
+
+function InstalacionAuditPlaceholder() {
+  return (
+    <AppCard variant="outline" size="sm" radius="md">
+      <AppEmptyState
+        title="Auditoría próximamente"
+        description="Aquí aparecerán la prealta PPPoE, autorizaciones, operaciones SSH y cambios realizados durante el flujo de instalación."
+      />
+    </AppCard>
+  );
+}
+
+export function InstalacionDetailView(props: Props) {
+  const { instalacion } = props;
+  const clienteNombre = getClienteNombre(instalacion);
+
+  return (
+    <AppStack gap="md">
+      <AppInline
+        justify="between"
+        align="start"
+        collapseBelow="sm"
+        gap="sm"
+        fullWidth
+      >
+        <div className="min-w-0">
+          <AppInline align="center" gap="xs" wrap>
+            <h1 className="text-base font-semibold">
+              Instalación #{instalacion.id}
+            </h1>
+            <AppBadge
+              tone={getEstadoToneInstalacion(instalacion.estado)}
+              appearance="soft"
+              size="xs"
+              radius="full"
+            >
+              {humanizeEnum(instalacion.estado)}
+            </AppBadge>
+            <AppBadge tone="neutral" appearance="soft" size="xs" radius="full">
+              {humanizeEnum(instalacion.tipo)}
+            </AppBadge>
+          </AppInline>
+          <p className={`truncate text-sm ${mutedTextClass}`}>
+            {clienteNombre}
+          </p>
+        </div>
+
+        <AppButton asChild variant="outline" size="sm">
+          <Link to={`/crm/cliente/${instalacion.cliente.id}/?tab=resumen`}>
+            Ver cliente
+          </Link>
+        </AppButton>
+      </AppInline>
+
+      <AppTabs
+        defaultValue="detalle"
+        variant="minimal"
+        size="sm"
+        contentSpacing="sm"
+        tabs={[
+          {
+            value: "detalle",
+            label: "Detalle de instalación",
+            icon: <ClipboardList aria-hidden="true" />,
+            content: <InstalacionGeneralTab {...props} />,
+          },
+          {
+            value: "auditoria",
+            label: "Auditoría",
+            icon: <History aria-hidden="true" />,
+            badge: (
+              <AppBadge
+                tone="neutral"
+                appearance="soft"
+                size="xs"
+                radius="full"
+              >
+                Próximamente
+              </AppBadge>
+            ),
+            content: <InstalacionAuditPlaceholder />,
+          },
+        ]}
       />
     </AppStack>
   );

@@ -6,11 +6,30 @@ export const crm_endpoints = {
 
   instalaciones: {
     post_instalacion: `/cliente-instalaciones`,
+
     get_instalaciones_paginated: `/cliente-instalaciones`,
+
     get_instalacion: (id: number) => `/cliente-instalaciones/${id}`,
 
     post_evidencias: (instalacionId: number, empresaId: number) =>
       `/cliente-instalaciones/${instalacionId}/evidencias/upload?empresaId=${empresaId}`,
+
+    get_mis_instalaciones_asignadas: `/cliente-instalaciones/mis-asignadas`,
+
+    get_instalacion_tecnica: (instalacionId: number) =>
+      `/cliente-instalaciones/${instalacionId}/tecnica`,
+
+    patch_reprogramar_instalacion: (instalacionId: number) =>
+      `/cliente-instalaciones/reprogramar/${instalacionId}`,
+
+    post_iniciar_instalacion: (instalacionId: number) =>
+      `/cliente-instalaciones/iniciar/${instalacionId}`,
+
+    post_completar_instalacion: (instalacionId: number) =>
+      `/cliente-instalaciones/completar/${instalacionId}`,
+
+    post_cancelar_instalacion: (instalacionId: number) =>
+      `/cliente-instalaciones/cancelar/${instalacionId}`,
   },
 
   customer: {

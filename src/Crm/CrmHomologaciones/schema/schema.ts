@@ -134,8 +134,6 @@ export const crearInstalacionSchema = z
       costoMateriales: optionalMoneyText,
       costoManoObra: optionalMoneyText,
       costoOtros: optionalMoneyText,
-      montoCobradoCliente: optionalMoneyText,
-      saldoPendiente: optionalMoneyText,
 
       notas: optionalText(1000, "Máximo 1000 caracteres"),
     }),
@@ -233,8 +231,6 @@ export const CREAR_INSTALACION_DEFAULT_VALUES: CrearInstalacionFormValues = {
     costoMateriales: "",
     costoManoObra: "",
     costoOtros: "",
-    montoCobradoCliente: "",
-    saldoPendiente: "",
     notas: "",
   },
 };
