@@ -10,7 +10,6 @@ import { AppEmptyState } from "@/components/app/primitives/app-empty-state";
 import { AppStack } from "@/components/app/primitives/app-stack";
 import { useGetInstalacionesTecnicasAsignadas } from "../CrmHooks/hooks/instalaciones/instalaciones-hook";
 import { InstalacionesList } from "./components/instalaciones-list";
-import { InstalacionesPageHeader } from "./components/instalaciones-page-header";
 import { InstalacionesPageSkeleton } from "./components/instalaciones-page-skeleton";
 import { InstalacionesPagination } from "./components/instalaciones-pagination";
 import { InstalacionesSummary } from "./components/instalaciones-summary";
@@ -21,6 +20,7 @@ import {
   type FiltrosInstalacionesState,
 } from "./tecnico-instalaciones.constants";
 import { buildInstalacionesSummary } from "./tecnico-instalaciones.utils";
+import { PageTransitionCrm } from "@/components/Layout/page-transition";
 
 export default function TecnicoInstalacionesPage() {
   const navigate = useNavigate();
@@ -87,88 +87,90 @@ export default function TecnicoInstalacionesPage() {
   }, [reset]);
 
   return (
-    <AppContainer size="lg" paddingX="sm" paddingY="sm">
-      <AppStack gap="md">
-        <InstalacionesPageHeader
-          activeAssignments={
-            instalacionesQuery.data ? summary.active : undefined
-          }
-        />
+    <PageTransitionCrm
+      titleHeader={`Instalaciones asignadas`}
+      // subtitle={`${summary.overdue}`}
+      variant="fade-pure"
+    >
+      <AppContainer paddingX="sm" paddingY="sm">
+        <AppStack gap="md">
+          <InstalacionesToolbar
+            search={state.search}
+            estado={state.estado}
+            isSearching={instalacionesQuery.isFetching}
+            onSearchChange={search("search")}
+            onDebouncedSearch={handleDebouncedSearch}
+            onEstadoChange={handleEstadoChange}
+          />
 
-        <InstalacionesToolbar
-          search={state.search}
-          estado={state.estado}
-          isSearching={instalacionesQuery.isFetching}
-          onSearchChange={search("search")}
-          onDebouncedSearch={handleDebouncedSearch}
-          onEstadoChange={handleEstadoChange}
-        />
-
-        {instalacionesQuery.isLoading ? (
-          <InstalacionesPageSkeleton />
-        ) : (
-          <>
-            {!instalacionesQuery.error && instalaciones.length > 0 ? (
-              <InstalacionesSummary
-                summary={summary}
-                visibleCount={instalaciones.length}
-              />
-            ) : null}
-
-            {instalacionesQuery.error ? (
-              <AppDataState
-                error={instalacionesQuery.error}
-                onRetry={() => instalacionesQuery.refetch()}
-              >
-                <div />
-              </AppDataState>
-            ) : instalaciones.length === 0 ? (
-              <AppEmptyState
-                preset={state.serverSearch || state.estado ? "search" : "empty"}
-                variant="soft"
-                title={
-                  state.serverSearch || state.estado
-                    ? "Sin coincidencias"
-                    : "No tienes instalaciones asignadas"
-                }
-                description={
-                  state.serverSearch || state.estado
-                    ? "Prueba otra búsqueda o limpia los filtros."
-                    : "Las nuevas asignaciones aparecerán aquí."
-                }
-                action={
-                  state.serverSearch || state.estado ? (
-                    <AppButton
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClearFilters}
-                    >
-                      <SearchX aria-hidden="true" />
-                      Limpiar filtros
-                    </AppButton>
-                  ) : undefined
-                }
-              />
-            ) : (
-              <AppDataState isFetching={instalacionesQuery.isFetching}>
-                <InstalacionesList
-                  instalaciones={instalaciones}
-                  onOpen={handleOpenInstallation}
+          {instalacionesQuery.isLoading ? (
+            <InstalacionesPageSkeleton />
+          ) : (
+            <>
+              {!instalacionesQuery.error && instalaciones.length > 0 ? (
+                <InstalacionesSummary
+                  summary={summary}
+                  visibleCount={instalaciones.length}
                 />
-              </AppDataState>
-            )}
+              ) : null}
 
-            {meta && meta.totalPages > 1 ? (
-              <InstalacionesPagination
-                meta={meta}
-                isFetching={instalacionesQuery.isFetching}
-                onPrevious={handlePreviousPage}
-                onNext={handleNextPage}
-              />
-            ) : null}
-          </>
-        )}
-      </AppStack>
-    </AppContainer>
+              {instalacionesQuery.error ? (
+                <AppDataState
+                  error={instalacionesQuery.error}
+                  onRetry={() => instalacionesQuery.refetch()}
+                >
+                  <div />
+                </AppDataState>
+              ) : instalaciones.length === 0 ? (
+                <AppEmptyState
+                  preset={
+                    state.serverSearch || state.estado ? "search" : "empty"
+                  }
+                  variant="soft"
+                  title={
+                    state.serverSearch || state.estado
+                      ? "Sin coincidencias"
+                      : "No tienes instalaciones asignadas"
+                  }
+                  description={
+                    state.serverSearch || state.estado
+                      ? "Prueba otra búsqueda o limpia los filtros."
+                      : "Las nuevas asignaciones aparecerán aquí."
+                  }
+                  action={
+                    state.serverSearch || state.estado ? (
+                      <AppButton
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearFilters}
+                      >
+                        <SearchX aria-hidden="true" />
+                        Limpiar filtros
+                      </AppButton>
+                    ) : undefined
+                  }
+                />
+              ) : (
+                <AppDataState isFetching={instalacionesQuery.isFetching}>
+                  <InstalacionesList
+                    instalaciones={instalaciones}
+                    onOpen={handleOpenInstallation}
+                  />
+                </AppDataState>
+              )}
+
+              {meta && meta.totalPages > 0 ? (
+                <InstalacionesPagination
+                  meta={meta}
+                  isFetching={instalacionesQuery.isFetching}
+                  onPrevious={handlePreviousPage}
+                  onNext={handleNextPage}
+                />
+              ) : null}
+            </>
+          )}
+        </AppStack>
+      </AppContainer>
+    </PageTransitionCrm>
   );
 }

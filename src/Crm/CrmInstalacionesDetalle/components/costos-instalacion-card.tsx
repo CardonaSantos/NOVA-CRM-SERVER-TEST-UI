@@ -15,7 +15,6 @@ export const CostosInstalacionCard = memo(function CostosInstalacionCard({
 }: CostosInstalacionCardProps) {
   const rows = [
     { label: "Plan", value: detalle.servicioInternet?.precio ?? 0 },
-    { label: "Instalación", value: detalle.cobro.costoInstalacion },
     { label: "Materiales", value: detalle.cobro.costoMateriales },
     { label: "Mano de obra", value: detalle.cobro.costoManoObra },
     { label: "Otros", value: detalle.cobro.costoOtros },

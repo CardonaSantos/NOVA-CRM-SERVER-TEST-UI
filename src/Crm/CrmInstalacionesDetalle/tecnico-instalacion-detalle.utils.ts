@@ -124,7 +124,7 @@ export function getInstallationInitialTotal(
 ) {
   return (
     toFiniteAmount(detalle.servicioInternet?.precio) +
-    toFiniteAmount(detalle.cobro.costoInstalacion) +
+    // toFiniteAmount(detalle.cobro.costoInstalacion) +
     toFiniteAmount(detalle.cobro.costoMateriales) +
     toFiniteAmount(detalle.cobro.costoManoObra) +
     toFiniteAmount(detalle.cobro.costoOtros)

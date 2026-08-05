@@ -69,6 +69,10 @@ export const crm_endpoints = {
   // PPPoE
   pppoe: {
     // PREALTA Y CREDENCIALES DENTRO DE UNA INSTALACIÓN
+    post_activar_instalacion: (instalacionId: number) =>
+      `/cliente-instalaciones/${instalacionId}/pppoe/activar`,
+    pppoe_perfil_homologacion_seleccionables:
+      "/pppoe-perfil-homologacion/select",
 
     post_reintentar_prealta: (
       instalacionId: number,
@@ -135,5 +139,8 @@ export const crm_endpoints = {
     ) => `/ppoe-perfil-homologacion/${id ?? 0}/${action}`,
 
     ppoe_perfil_homologacion_seleccionables: "/ppoe-perfil-homologacion/select",
+
+    get_auditoria_instalacion: (instalacionId: number) =>
+      `/cliente-instalaciones/${instalacionId}/auditoria-pppoe`,
   },
 } as const;

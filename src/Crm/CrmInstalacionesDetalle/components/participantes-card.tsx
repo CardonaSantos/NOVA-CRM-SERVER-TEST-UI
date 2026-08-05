@@ -52,7 +52,6 @@ export const ParticipantesCard = memo(function ParticipantesCard({
 
                 {participante.esResponsable ? (
                   <AppBadge tone="primary" size="xs">
-                    <Crown aria-hidden="true" />
                     Responsable
                   </AppBadge>
                 ) : null}

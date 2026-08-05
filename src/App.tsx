@@ -371,13 +371,13 @@ function App() {
           />
 
           <Route
-            path="/crm/pppoe/homologacion-perfiles"
-            element={adminRoute(<PerfilesHomologacionPage />)}
+            path="/crm/instalaciones/tecnico/:instalacionId"
+            element={crmRoute(<TecnicoInstalacionDetallePage />)}
           />
 
           <Route
-            path="/crm/instalacion/detalle-tecnico/:instalacionId"
-            element={adminRoute(<TecnicoInstalacionDetallePage />)}
+            path="/crm/pppoe/homologacion-perfiles"
+            element={adminRoute(<PerfilesHomologacionPage />)}
           />
         </Route>
 

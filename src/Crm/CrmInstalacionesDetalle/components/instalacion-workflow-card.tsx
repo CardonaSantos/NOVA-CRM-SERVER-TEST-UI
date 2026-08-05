@@ -25,63 +25,57 @@ type InstalacionWorkflowCardProps = {
   onAction?: (request: InstalacionDetalleActionRequest) => void;
 };
 
-const SECONDARY_ACTIONS: readonly InstalacionDetalleActionKey[] = [
-  "reprogramar",
-  "subirEvidencia",
-  "cancelar",
-];
+const SECONDARY_ACTIONS: readonly InstalacionDetalleActionKey[] = [];
 
-export const InstalacionWorkflowCard = memo(
-  function InstalacionWorkflowCard({
-    detalle,
-    onAction,
-  }: InstalacionWorkflowCardProps) {
-    const primaryAction = getPrimaryWorkflowAction(detalle);
+export const InstalacionWorkflowCard = memo(function InstalacionWorkflowCard({
+  detalle,
+  onAction,
+}: InstalacionWorkflowCardProps) {
+  const primaryAction = getPrimaryWorkflowAction(detalle);
 
-    const handleAction = useCallback(
-      (action: InstalacionDetalleActionKey) => {
-        onAction?.({ action, instalacionId: detalle.id });
-      },
-      [detalle.id, onAction],
-    );
+  const handleAction = useCallback(
+    (action: InstalacionDetalleActionKey) => {
+      onAction?.({ action, instalacionId: detalle.id });
+    },
+    [detalle.id, onAction],
+  );
 
-    return (
-      <DetalleSectionCard
-        id="flujo-instalacion"
-        title="Flujo de instalación"
-        icon={ClipboardList}
-      >
-        <AppStack gap="sm">
-          {primaryAction ? (
+  return (
+    <DetalleSectionCard
+      id="flujo-instalacion"
+      title="Flujo de instalación"
+      icon={ClipboardList}
+    >
+      <AppStack gap="sm">
+        {primaryAction ? (
+          <WorkflowButton
+            action={primaryAction}
+            detalle={detalle}
+            hasHandler={Boolean(onAction)}
+            primary
+            onAction={handleAction}
+          />
+        ) : (
+          <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+            No hay una acción principal disponible.
+          </div>
+        )}
+
+        <AppInline gap="xs" wrap fullWidth>
+          {SECONDARY_ACTIONS.map((action) => (
             <WorkflowButton
-              action={primaryAction}
+              key={action}
+              action={action}
               detalle={detalle}
               hasHandler={Boolean(onAction)}
-              primary
               onAction={handleAction}
             />
-          ) : (
-            <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-              No hay una acción principal disponible.
-            </div>
-          )}
-
-          <AppInline gap="xs" wrap fullWidth>
-            {SECONDARY_ACTIONS.map((action) => (
-              <WorkflowButton
-                key={action}
-                action={action}
-                detalle={detalle}
-                hasHandler={Boolean(onAction)}
-                onAction={handleAction}
-              />
-            ))}
-          </AppInline>
-        </AppStack>
-      </DetalleSectionCard>
-    );
-  },
-);
+          ))}
+        </AppInline>
+      </AppStack>
+    </DetalleSectionCard>
+  );
+});
 
 type WorkflowButtonProps = {
   action: InstalacionDetalleActionKey;
@@ -98,17 +92,15 @@ const WorkflowButton = memo(function WorkflowButton({
   primary = false,
   onAction,
 }: WorkflowButtonProps) {
-  const disabledReason = getActionDisabledReason(
-    detalle,
-    action,
-    hasHandler,
-  );
+  const disabledReason = getActionDisabledReason(detalle, action, hasHandler);
   const Icon = getActionIcon(action);
 
   return (
     <AppButton
       size={primary ? "sm" : "xs"}
-      variant={primary ? "primary" : action === "cancelar" ? "danger" : "outline"}
+      variant={
+        primary ? "primary" : action === "cancelar" ? "danger" : "outline"
+      }
       disabled={Boolean(disabledReason)}
       title={disabledReason}
       aria-label={getActionLabel(action)}

@@ -12,13 +12,14 @@ import { AppEmptyState } from "@/components/app/primitives/app-empty-state";
 import { useGetDetalleInstalacionTecnica } from "../CrmHooks/hooks/instalaciones/instalaciones-hook";
 
 import { InstalacionDetalleSkeleton } from "./components/instalacion-detalle-skeleton";
+import { TecnicoInstalacionActionHost } from "./TecnicoInstalacionActionHost";
 
 import {
   normalizeDetalleInstalacionTecnicaResponse,
   type InstalacionDetalleActionRequest,
 } from "./tecnico-instalacion-detalle.utils";
 import { TecnicoInstalacionDetalleView } from "./TecnicoInstalacionDetalleView ";
-import { TecnicoInstalacionActionHost } from "./TecnicoInstalacionActionHost";
+import { PageTransitionCrm } from "@/components/Layout/page-transition";
 
 export default function TecnicoInstalacionDetallePage() {
   const navigate = useNavigate();
@@ -29,7 +30,8 @@ export default function TecnicoInstalacionDetallePage() {
 
   const instalacionId = Number(instalacionIdParam);
 
-  const validId = Number.isInteger(instalacionId) && instalacionId > 0;
+  const instalacionIdValido =
+    Number.isInteger(instalacionId) && instalacionId > 0;
 
   const detalleQuery = useGetDetalleInstalacionTecnica(instalacionId);
 
@@ -39,49 +41,34 @@ export default function TecnicoInstalacionDetallePage() {
     return normalizeDetalleInstalacionTecnicaResponse(detalleQuery.data);
   }, [detalleQuery.data]);
 
-  /**
-   * Conserva coordinados:
-   * - diálogo abierto
-   * - acción solicitada
-   * - instalación/acceso involucrado
-   */
   const actionFlow = useAppConfirmHandler<InstalacionDetalleActionRequest>();
 
   const handleBack = useCallback(() => {
     navigate("/crm/instalaciones/tecnico");
   }, [navigate]);
 
-  /**
-   * Este es el onAction real que recibe la vista.
-   *
-   * No ejecuta directamente todas las mutations:
-   * selecciona el flujo y abre el dialog correspondiente.
-   */
   const handleAction = useCallback(
     (request: InstalacionDetalleActionRequest) => {
       actionFlow.open(request);
     },
-    [actionFlow.open],
+    [actionFlow],
   );
 
-  /**
-   * Se ejecuta después de que una acción termina correctamente.
-   */
   const handleActionCompleted = useCallback(async () => {
     actionFlow.setOpen(false);
     await detalleQuery.refetch();
-  }, [actionFlow.setOpen, detalleQuery.refetch]);
+  }, [actionFlow, detalleQuery]);
 
-  if (!validId) {
+  if (!instalacionIdValido) {
     return (
       <AppContainer size="md" paddingX="sm" paddingY="sm">
         <AppEmptyState
           preset="empty"
           variant="soft"
           title="Instalación no válida"
-          description="No se encontró un identificador válido."
+          description="El identificador de la instalación no es válido."
           action={
-            <AppButton variant="outline" size="sm" onClick={handleBack}>
+            <AppButton size="sm" variant="outline" onClick={handleBack}>
               <ArrowLeft aria-hidden="true" />
               Volver
             </AppButton>
@@ -119,9 +106,9 @@ export default function TecnicoInstalacionDetallePage() {
           preset="empty"
           variant="soft"
           title="Instalación no encontrada"
-          description="El detalle no está disponible."
+          description="No fue posible obtener el detalle."
           action={
-            <AppButton variant="outline" size="sm" onClick={handleBack}>
+            <AppButton size="sm" variant="outline" onClick={handleBack}>
               <ArrowLeft aria-hidden="true" />
               Volver
             </AppButton>
@@ -133,20 +120,27 @@ export default function TecnicoInstalacionDetallePage() {
 
   return (
     <>
-      <AppDataState isFetching={detalleQuery.isFetching}>
-        <TecnicoInstalacionDetalleView
-          detalle={detalle}
-          onBack={handleBack}
-          onAction={handleAction}
-        />
-      </AppDataState>
+      <PageTransitionCrm
+        titleHeader={`Instalación #${instalacionId}`}
+        // subtitle={`${summary.overdue}`}
+        variant="fade-pure"
+      >
+        <AppDataState isFetching={detalleQuery.isFetching}>
+          <TecnicoInstalacionDetalleView
+            detalle={detalle}
+            onBack={handleBack}
+            onAction={handleAction}
+          />
+        </AppDataState>
 
-      <TecnicoInstalacionActionHost
-        request={actionFlow.target}
-        open={actionFlow.isOpen}
-        onOpenChange={actionFlow.setOpen}
-        onCompleted={handleActionCompleted}
-      />
+        <TecnicoInstalacionActionHost
+          detalle={detalle}
+          request={actionFlow.target}
+          open={actionFlow.isOpen}
+          onOpenChange={actionFlow.setOpen}
+          onCompleted={handleActionCompleted}
+        />
+      </PageTransitionCrm>
     </>
   );
 }

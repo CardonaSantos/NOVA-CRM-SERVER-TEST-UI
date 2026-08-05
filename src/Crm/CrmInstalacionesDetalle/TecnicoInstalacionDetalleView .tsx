@@ -11,7 +11,6 @@ import { ClienteUbicacionCard } from "./components/cliente-ubicacion-card";
 import { CostosInstalacionCard } from "./components/costos-instalacion-card";
 import { EquiposCard } from "./components/equipos-card";
 import { EvidenciasCard } from "./components/evidencias-card";
-import { InstalacionDetalleHeader } from "./components/instalacion-detalle-header";
 import { InstalacionWorkflowCard } from "./components/instalacion-workflow-card";
 import { ParticipantesCard } from "./components/participantes-card";
 import { ResumenOperativoCard } from "./components/resumen-operativo-card";
@@ -28,17 +27,12 @@ type TecnicoInstalacionDetalleViewProps = {
 export const TecnicoInstalacionDetalleView = memo(
   function TecnicoInstalacionDetalleView({
     detalle,
-    onBack,
     onAction,
   }: TecnicoInstalacionDetalleViewProps) {
     return (
-      <AppContainer size="lg" paddingX="sm" paddingY="sm">
+      <AppContainer>
         <article aria-labelledby="instalacion-detalle-title">
           <AppStack gap="sm">
-            <InstalacionDetalleHeader detalle={detalle} onBack={onBack} />
-
-            <InstalacionWorkflowCard detalle={detalle} onAction={onAction} />
-
             <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
               <AppStack gap="sm">
                 <ResumenOperativoCard detalle={detalle} />

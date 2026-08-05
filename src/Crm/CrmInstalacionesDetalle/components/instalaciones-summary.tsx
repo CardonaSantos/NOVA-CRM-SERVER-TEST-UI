@@ -1,5 +1,10 @@
 import { memo } from "react";
-import { CheckCircle2, Clock3, TriangleAlert, Wrench } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock3,
+  TriangleAlert,
+  Wrench,
+} from "lucide-react";
 import { AppCard } from "@/components/app/primitives/app-card";
 import { AppGrid } from "@/components/app/primitives/app-grid";
 import { AppInline } from "@/components/app/primitives/app-inline";
@@ -13,6 +18,7 @@ type InstalacionesSummaryProps = {
 
 const METRICS = [
   { key: "overdue", label: "Atrasadas", icon: TriangleAlert },
+  { key: "pendingStart", label: "Por iniciar", icon: Clock3 },
   { key: "inProgress", label: "En proceso", icon: Wrench },
   { key: "completed", label: "Completadas", icon: CheckCircle2 },
 ] as const;
