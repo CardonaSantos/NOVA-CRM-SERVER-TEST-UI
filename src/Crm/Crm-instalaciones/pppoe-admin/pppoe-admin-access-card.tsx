@@ -14,20 +14,22 @@ import type {
   PppoeAuditoriaCuentaCompleta,
 } from "@/Crm/features/instalaciones_pppoe_auditoria/instalacion-pppoe-auditoria.interfaces";
 import type { PppoeAdminActionRequest } from "@/Crm/features/instalaciones_pppoe_administracion/pppoe-administracion.interfaces";
-import {
-  canActivateInitialPppoe,
-  canReactivatePppoe,
-  canSuspendPppoe,
-} from "@/Crm/features/instalaciones_pppoe_administracion/pppoe-administracion.utils";
+
 import {
   formatAuditDate,
   humanizeEnum,
 } from "../details/instalacion-utils.utils";
+import { resolvePppoeMainAction } from "@/Crm/features/instalaciones_pppoe_administracion/pppoe-administracion.utils";
 
 type Props = {
   instalacionId: number;
+
+  fechaActivacionServicio: string | null;
+
   access: PppoeAuditoriaAccesoAdministrableResumen;
+
   fullAccount: PppoeAuditoriaCuentaCompleta | null;
+
   onAction: (request: PppoeAdminActionRequest) => void;
 };
 
@@ -47,10 +49,26 @@ export function PppoeAdminAccessCard({
   access,
   fullAccount,
   onAction,
+  fechaActivacionServicio,
 }: Props) {
   const account = access.cuentaPppoe;
   const accountState = account?.estado ?? null;
+
   const isFullAccount = fullAccount?.id === account?.id;
+
+  const mainAction = account
+    ? resolvePppoeMainAction({
+        estadoCuenta: account.estado,
+
+        cuentaActivadaEn: isFullAccount
+          ? (fullAccount?.activadoEn ?? null)
+          : null,
+
+        accesoActivadoEn: access.activadoEn,
+
+        instalacionActivadaEn: fechaActivacionServicio,
+      })
+    : "NINGUNA";
 
   return (
     <AppCard variant="outline" size="xs" radius="md" className="p-3">
@@ -148,15 +166,14 @@ export function PppoeAdminAccessCard({
             </AppButton>
           ) : null}
 
-          {account && canActivateInitialPppoe(account.estado) ? (
+          {account && mainAction === "ACTIVAR_INICIAL" ? (
             <AppButton
               type="button"
               size="sm"
               onClick={() =>
                 onAction({
-                  action: "activar",
+                  action: "activarInicial",
                   instalacionId,
-                  cuentaPppoeId: account.id,
                 })
               }
             >
@@ -165,7 +182,7 @@ export function PppoeAdminAccessCard({
             </AppButton>
           ) : null}
 
-          {account && canSuspendPppoe(account.estado) ? (
+          {account && mainAction === "SUSPENDER" ? (
             <AppButton
               type="button"
               variant="danger"
@@ -183,7 +200,7 @@ export function PppoeAdminAccessCard({
             </AppButton>
           ) : null}
 
-          {account && canReactivatePppoe(account.estado) ? (
+          {account && mainAction === "REACTIVAR" ? (
             <AppButton
               type="button"
               size="sm"

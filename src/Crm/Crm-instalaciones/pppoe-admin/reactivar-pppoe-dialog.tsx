@@ -3,7 +3,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 
-import { AppForm, AppFormSubmit, AppFormTextarea } from "@/components/app/form";
+import {
+  AppForm,
+  AppFormInput,
+  AppFormSubmit,
+  AppFormTextarea,
+} from "@/components/app/form";
 import { AppAlert } from "@/components/app/primitives/app-alert";
 import { AppButton } from "@/components/app/primitives/app-button";
 import {
@@ -32,6 +37,7 @@ type Props = PppoeAdminDialogProps & {
 
 const DEFAULTS: MotivoReactivacionPppoeFormValues = {
   motivo: "",
+  contrasenaActual: "",
 };
 
 export function ReactivarPppoeDialog({
@@ -65,7 +71,10 @@ export function ReactivarPppoeDialog({
       await toast.promise(
         mutation.mutateAsync({
           claveIdempotencia: idempotencyKeyRef.current,
+
           motivo: values.motivo.trim(),
+
+          contrasenaActual: values.contrasenaActual,
         }),
         {
           loading: "Reactivando servicio PPPoE...",
@@ -76,13 +85,16 @@ export function ReactivarPppoeDialog({
 
       onCompleted();
     } catch {
-      // El diálogo permanece abierto para corregir o volver a intentar.
+      form.setValue("contrasenaActual", "", {
+        shouldDirty: false,
+        shouldValidate: true,
+      });
     }
   };
 
   return (
-    <AppDialog open={open} onOpenChange={onOpenChange}>
-      <AppDialogContent size="sm" preventClose={mutation.isPending}>
+    <AppDialog modal open={open} onOpenChange={onOpenChange}>
+      <AppDialogContent size="sm">
         <AppDialogHeader>
           <AppDialogTitle>Reactivar servicio PPPoE</AppDialogTitle>
           <AppDialogDescription>
@@ -93,7 +105,11 @@ export function ReactivarPppoeDialog({
         <AppDialogBody>
           <AppForm form={form} onSubmit={onSubmit}>
             <AppStack gap="sm">
-              <AppAlert tone="warning" title="Confirmación administrativa" size="xs">
+              <AppAlert
+                tone="warning"
+                title="Confirmación administrativa"
+                size="xs"
+              >
                 Verifique que la causa de suspensión ya fue resuelta antes de
                 reactivar el servicio.
               </AppAlert>
@@ -104,6 +120,14 @@ export function ReactivarPppoeDialog({
                 placeholder="Explique por qué se restablece el acceso"
                 rows={4}
                 resizeMode="vertical"
+                required
+              />
+
+              <AppFormInput<MotivoReactivacionPppoeFormValues>
+                name="contrasenaActual"
+                type="password"
+                label="Contraseña actual"
+                autoComplete="current-password"
                 required
               />
 

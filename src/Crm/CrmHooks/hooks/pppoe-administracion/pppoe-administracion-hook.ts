@@ -14,6 +14,18 @@ import {
   EjecutarOperacionPppoeResponse,
 } from "@/Crm/features/instalaciones_pppoe_administracion/pppoe-administracion.interfaces";
 
+export type ReintentarPppoeOperacionPayload = {
+  empresaId: number;
+
+  claveIdempotencia: string;
+
+  motivo?: string | null;
+};
+
+export function buildPppoeRetryIdempotencyKey(operacionId: number) {
+  return ["pppoe-reintento", operacionId, crypto.randomUUID()].join(":");
+}
+
 function useInvalidatePppoeAdministration() {
   const invalidate = useInvalidateQk();
 
@@ -72,6 +84,22 @@ export function usePostReactivarCuentaPppoe(cuentaPppoeId: number) {
     crm_endpoints.pppoe.post_reactivar_cuenta(cuentaPppoeId),
     undefined,
     { onSuccess: invalidate },
+  );
+}
+
+export function usePostReintentarPppoeOperacion(operacionId: number) {
+  const invalidate = useInvalidatePppoeAdministration();
+
+  return crm.useMutationApi<
+    EjecutarOperacionPppoeResponse,
+    ReintentarPppoeOperacionPayload
+  >(
+    "post",
+    crm_endpoints.pppoe.post_reintentar_operacion(operacionId),
+    undefined,
+    {
+      onSuccess: invalidate,
+    },
   );
 }
 

@@ -28,74 +28,83 @@ import {
 import { AuditoriaEventos } from "./auditoria-eventos";
 import { AuditoriaJsonDetails } from "./auditoria-json-details";
 import { AuditoriaOperacionPasos } from "./auditoria-operacion-pasos";
+import { AuditoriaReintentarOperacionButton } from "./auditoria-reintentar-button";
 
 type Props = {
   item: InstalacionPppoeOperacionTimelineItem;
+
+  canRetry: boolean;
+
+  onRetrySuccess?: () => void;
 };
 
-function ContextItem({
-  label,
-  value,
-}: {
-  label: string;
-  value: ReactNode;
-}) {
+function ContextItem({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="min-w-0">
       <p className="text-[10px] text-[hsl(var(--app-muted-foreground))]">
         {label}
       </p>
-      <div className="mt-0.5 break-words text-[11px] font-medium">{value}</div>
+
+      <div className="mt-0.5 text-[11px] font-medium">{value}</div>
     </div>
   );
 }
 
-export function AuditoriaOperacionCard({ item }: Props) {
+export function AuditoriaOperacionCard({
+  item,
+  canRetry,
+  onRetrySuccess,
+}: Props) {
   const { operacion, contexto, actores } = item;
+
   const actor =
     actores.iniciadoPor?.nombre ??
     actores.reautenticadoPor?.nombre ??
     "Sistema";
 
-  return (
-    <AppCard variant="outline" size="xs" radius="md" className="overflow-hidden">
-      <details className="group">
-        <summary className="cursor-pointer list-none p-3">
-          <AppStack gap="xs">
-            <AppInline
-              justify="between"
-              align="start"
-              gap="sm"
-              collapseBelow="sm"
-              fullWidth
-            >
-              <div className="min-w-0">
-                <AppInline align="center" gap="xs" wrap>
-                  <Activity className="size-4" aria-hidden="true" />
-                  <h3 className="text-sm font-semibold">
-                    {getOperationTitle(operacion.tipo)}
-                  </h3>
-                  <AppBadge
-                    tone={getOperationTone(operacion.estado)}
-                    appearance="soft"
-                    size="xs"
-                    radius="full"
-                  >
-                    {humanizePppoeEnum(operacion.estado)}
-                  </AppBadge>
-                </AppInline>
+  const hasError = Boolean(operacion.errorCodigo || operacion.errorMensaje);
 
-                <p className="mt-1 text-[11px] text-[hsl(var(--app-muted-foreground))]">
-                  {formatPppoeDate(item.fecha)} · {operacion.canal} · Intento{" "}
-                  {operacion.numeroIntento} ·{" "}
-                  {formatPppoeDuration(operacion.duracionMs)}
-                </p>
-              </div>
+  return (
+    <AppCard>
+      <details className="group">
+        <summary className="cursor-pointer list-none px-3 py-3">
+          <AppStack gap="sm">
+            <AppInline justify="between" align="start" gap="sm" wrap={false}>
+              <AppInline align="start" gap="sm" wrap={false}>
+                <Activity
+                  className="mt-0.5 size-4 shrink-0"
+                  aria-hidden="true"
+                />
+
+                <div className="min-w-0">
+                  <AppInline align="center" gap="xs" wrap>
+                    <p className="text-sm font-semibold">
+                      {getOperationTitle(operacion.tipo)}
+                    </p>
+
+                    <AppBadge
+                      tone={getOperationTone(operacion.estado)}
+                      appearance="soft"
+                      size="xs"
+                      radius="full"
+                    >
+                      {humanizePppoeEnum(operacion.estado)}
+                    </AppBadge>
+                  </AppInline>
+
+                  <p className="mt-1 text-[11px] text-[hsl(var(--app-muted-foreground))]">
+                    {formatPppoeDate(item.fecha)} · {operacion.canal} · Intento{" "}
+                    {operacion.numeroIntento} ·{" "}
+                    {formatPppoeDuration(operacion.duracionMs)}
+                  </p>
+                </div>
+              </AppInline>
 
               <AppInline align="center" gap="xs" wrap={false}>
                 <span className="hidden text-[11px] text-[hsl(var(--app-muted-foreground))] sm:inline">
                   Ver trazabilidad
                 </span>
+
                 <ChevronDown
                   className="size-4 transition-transform group-open:rotate-180"
                   aria-hidden="true"
@@ -108,16 +117,22 @@ export function AuditoriaOperacionCard({ item }: Props) {
                 label="Operador"
                 value={
                   <AppInline align="center" gap="xs" wrap={false}>
-                    <CircleUserRound className="size-3.5" aria-hidden="true" />
+                    <CircleUserRound
+                      className="size-3.5 shrink-0"
+                      aria-hidden="true"
+                    />
+
                     <span className="truncate">{actor}</span>
                   </AppInline>
                 }
               />
+
               <ContextItem
                 label="Cuenta"
                 value={
                   <AppInline align="center" gap="xs" wrap>
                     <span>Usuario {contexto.cuentaPppoe.usuario}</span>
+
                     <AppBadge
                       tone={getAccountTone(contexto.cuentaPppoe.estado)}
                       appearance="soft"
@@ -129,20 +144,27 @@ export function AuditoriaOperacionCard({ item }: Props) {
                   </AppInline>
                 }
               />
+
               <ContextItem
                 label="Perfil"
                 value={
                   <AppInline align="center" gap="xs" wrap={false}>
-                    <Network className="size-3.5" aria-hidden="true" />
-                    <span>{contexto.perfilHomologacion?.codigoPerfil ?? "Sin perfil"}</span>
+                    <Network className="size-3.5 shrink-0" aria-hidden="true" />
+
+                    <span className="truncate">
+                      {contexto.perfilHomologacion?.codigoPerfil ??
+                        "Sin perfil"}
+                    </span>
                   </AppInline>
                 }
               />
+
               <ContextItem
                 label="Router"
                 value={
                   <AppInline align="center" gap="xs" wrap={false}>
-                    <Router className="size-3.5" aria-hidden="true" />
+                    <Router className="size-3.5 shrink-0" aria-hidden="true" />
+
                     <span className="truncate">{contexto.router.nombre}</span>
                   </AppInline>
                 }
@@ -157,6 +179,7 @@ export function AuditoriaOperacionCard({ item }: Props) {
           <AppStack gap="sm">
             <AppGrid cols={{ base: 1, sm: 2, lg: 4 }} gap="sm">
               <ContextItem label="Operación" value={`#${operacion.id}`} />
+
               <ContextItem
                 label="Idempotencia"
                 value={
@@ -165,10 +188,12 @@ export function AuditoriaOperacionCard({ item }: Props) {
                   </code>
                 }
               />
+
               <ContextItem
                 label="Host"
                 value={`${contexto.router.host}:${contexto.router.sshPort}`}
               />
+
               <ContextItem
                 label="Plan"
                 value={
@@ -184,11 +209,12 @@ export function AuditoriaOperacionCard({ item }: Props) {
                 <p className="text-[10px] text-[hsl(var(--app-muted-foreground))]">
                   Motivo
                 </p>
+
                 <p className="mt-0.5 text-xs">{operacion.motivo}</p>
               </div>
             ) : null}
 
-            {operacion.errorCodigo || operacion.errorMensaje ? (
+            {hasError ? (
               <AppAlert
                 tone="danger"
                 size="xs"
@@ -196,6 +222,13 @@ export function AuditoriaOperacionCard({ item }: Props) {
               >
                 {operacion.errorMensaje ?? "Sin mensaje de error."}
               </AppAlert>
+            ) : null}
+
+            {canRetry ? (
+              <AuditoriaReintentarOperacionButton
+                item={item}
+                onSuccess={onRetrySuccess}
+              />
             ) : null}
 
             <AuditoriaJsonDetails
@@ -207,6 +240,7 @@ export function AuditoriaOperacionCard({ item }: Props) {
               <summary className="cursor-pointer text-xs font-semibold text-[hsl(var(--app-primary))]">
                 Pasos técnicos ({item.pasos.length})
               </summary>
+
               <div className="mt-2">
                 <AuditoriaOperacionPasos pasos={item.pasos} />
               </div>
@@ -216,6 +250,7 @@ export function AuditoriaOperacionCard({ item }: Props) {
               <summary className="cursor-pointer text-xs font-semibold text-[hsl(var(--app-primary))]">
                 Eventos de auditoría ({item.auditorias.length})
               </summary>
+
               <div className="mt-2">
                 <AuditoriaEventos auditorias={item.auditorias} compact />
               </div>

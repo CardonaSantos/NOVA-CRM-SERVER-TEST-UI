@@ -39,7 +39,7 @@ export const PppoeAdminActionHost = memo(function PppoeAdminActionHost({
         />
       );
 
-    case "activar":
+    case "activarInicial":
       return (
         <ActivarPppoeDialog
           instalacionId={request.instalacionId}
@@ -48,7 +48,6 @@ export const PppoeAdminActionHost = memo(function PppoeAdminActionHost({
           onCompleted={onCompleted}
         />
       );
-
     case "revelarCredenciales":
       return (
         <CredencialesPppoeDialog

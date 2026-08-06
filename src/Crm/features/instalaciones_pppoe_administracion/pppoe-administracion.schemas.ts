@@ -1,10 +1,12 @@
 import { z } from "zod";
 
+const contrasenaActualSchema = z
+  .string()
+  .min(1, "Ingrese su contraseña actual")
+  .max(512, "La contraseña supera el límite permitido");
+
 export const activarPppoeSchema = z.object({
-  contrasenaActual: z
-    .string()
-    .min(1, "Ingrese su contraseña actual")
-    .max(512, "La contraseña supera el límite permitido"),
+  contrasenaActual: contrasenaActualSchema,
 });
 
 export type ActivarPppoeFormValues = z.infer<typeof activarPppoeSchema>;
@@ -15,6 +17,8 @@ export const motivoSuspensionPppoeSchema = z.object({
     .trim()
     .min(5, "Explique el motivo con al menos 5 caracteres")
     .max(500, "El motivo no puede superar 500 caracteres"),
+
+  contrasenaActual: contrasenaActualSchema,
 });
 
 export type MotivoSuspensionPppoeFormValues = z.infer<
@@ -27,6 +31,8 @@ export const motivoReactivacionPppoeSchema = z.object({
     .trim()
     .min(5, "Explique el motivo con al menos 5 caracteres")
     .max(2_000, "El motivo no puede superar 2000 caracteres"),
+
+  contrasenaActual: contrasenaActualSchema,
 });
 
 export type MotivoReactivacionPppoeFormValues = z.infer<
@@ -34,10 +40,7 @@ export type MotivoReactivacionPppoeFormValues = z.infer<
 >;
 
 export const autorizarOperacionPppoeSchema = z.object({
-  password: z
-    .string()
-    .min(1, "Ingrese su contraseña actual")
-    .max(512, "La contraseña supera el límite permitido"),
+  password: contrasenaActualSchema,
 });
 
 export type AutorizarOperacionPppoeFormValues = z.infer<

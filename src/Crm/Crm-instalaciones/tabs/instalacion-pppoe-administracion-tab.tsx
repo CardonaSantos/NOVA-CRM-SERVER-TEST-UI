@@ -161,6 +161,9 @@ export function InstalacionPppoeAdministracionTab({
                   <PppoeAdminAccessCard
                     key={access.id}
                     instalacionId={instalacion.id}
+                    fechaActivacionServicio={
+                      summary.instalacion.fechaActivacionServicio
+                    }
                     access={access}
                     fullAccount={
                       summary.cuentaPppoe?.accesoInternetId === access.id

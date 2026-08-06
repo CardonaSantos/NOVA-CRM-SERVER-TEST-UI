@@ -77,10 +77,11 @@ export function ActivarPppoeDialog({
     <AppDialog open={open} onOpenChange={onOpenChange}>
       <AppDialogContent size="sm">
         <AppDialogHeader>
-          <AppDialogTitle>Activar cuenta PPPoE</AppDialogTitle>
+          <AppDialogTitle>Activar cuenta por primera vez</AppDialogTitle>
+
           <AppDialogDescription>
-            La oficina creará o confirmará el secret y lo habilitará en el
-            router asociado.
+            La oficina iniciará el flujo de instalación, creará o confirmará el
+            secret y lo habilitará en el router asociado.
           </AppDialogDescription>
         </AppDialogHeader>
 
@@ -94,11 +95,11 @@ export function ActivarPppoeDialog({
 
               <AppFormInput<ActivarPppoeFormValues>
                 name="contrasenaActual"
+                type="password"
                 label="Contraseña actual"
                 autoComplete="current-password"
                 required
               />
-
               <AppInline justify="end" gap="xs" fullWidth>
                 <AppButton
                   type="button"

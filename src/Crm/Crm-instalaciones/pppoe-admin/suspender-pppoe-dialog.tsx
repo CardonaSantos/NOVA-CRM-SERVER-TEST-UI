@@ -3,7 +3,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 
-import { AppForm, AppFormSubmit, AppFormTextarea } from "@/components/app/form";
+import {
+  AppForm,
+  AppFormInput,
+  AppFormSubmit,
+  AppFormTextarea,
+} from "@/components/app/form";
 import { AppAlert } from "@/components/app/primitives/app-alert";
 import { AppButton } from "@/components/app/primitives/app-button";
 import {
@@ -32,6 +37,7 @@ type Props = PppoeAdminDialogProps & {
 
 const DEFAULTS: MotivoSuspensionPppoeFormValues = {
   motivo: "",
+  contrasenaActual: "",
 };
 
 export function SuspenderPppoeDialog({
@@ -65,7 +71,13 @@ export function SuspenderPppoeDialog({
       await toast.promise(
         mutation.mutateAsync({
           claveIdempotencia: idempotencyKeyRef.current,
+
           motivo: values.motivo.trim(),
+
+          /*
+           * No se transforma ni se recorta.
+           */
+          contrasenaActual: values.contrasenaActual,
         }),
         {
           loading: "Suspendiendo servicio PPPoE...",
@@ -76,13 +88,19 @@ export function SuspenderPppoeDialog({
 
       onCompleted();
     } catch {
-      // El backend conserva autoridad sobre estado, permisos y concurrencia.
+      form.setValue("contrasenaActual", "", {
+        shouldDirty: false,
+        shouldValidate: true,
+      });
     }
   };
 
   return (
-    <AppDialog open={open} onOpenChange={onOpenChange}>
-      <AppDialogContent size="sm">
+    <AppDialog modal open={open} onOpenChange={onOpenChange}>
+      <AppDialogContent
+        // preventClose={mutation.isPending}
+        size="sm"
+      >
         <AppDialogHeader>
           <AppDialogTitle>Suspender servicio PPPoE</AppDialogTitle>
           <AppDialogDescription>
@@ -108,6 +126,14 @@ export function SuspenderPppoeDialog({
                 placeholder="Explique por qué se suspende el acceso"
                 rows={4}
                 resizeMode="vertical"
+                required
+              />
+
+              <AppFormInput<MotivoSuspensionPppoeFormValues>
+                name="contrasenaActual"
+                type="password"
+                label="Contraseña actual"
+                autoComplete="current-password"
                 required
               />
 

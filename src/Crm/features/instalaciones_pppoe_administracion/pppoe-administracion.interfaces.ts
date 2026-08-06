@@ -11,6 +11,13 @@ export type ActivarPppoeInstalacionPayload = {
 export type AccionManualCuentaPppoePayload = {
   claveIdempotencia: string;
   motivo: string;
+
+  /*
+   * Se prepara en UI ahora.
+   * El backend debe aceptar este campo antes de probar
+   * suspensión y reactivación.
+   */
+  contrasenaActual: string;
 };
 
 export type AutorizarPppoeOperacionPayload = {
@@ -31,29 +38,7 @@ export type EjecutarOperacionPppoeResponse = {
   errorMensaje: string | null;
 };
 
-/**
- * La pestaña no consume campos concretos del resultado de activación.
- * El contrato se mantiene abierto para no acoplar la UI al presenter
- * mientras el backend termina de estabilizar su nombre de propiedades.
- */
 export type ActivarPppoeInstalacionResponse = Record<string, unknown>;
-
-export type PerfilHomologacionSeleccionable = {
-  id: number;
-  codigoPerfil: string;
-  mikrotikRouterId: number;
-  servicioInternetId: number;
-  mikrotikRouter: {
-    id: number;
-    nombre: string;
-  };
-  servicioInternet: {
-    id: number;
-    nombre: string;
-    velocidad: string | null;
-    precio: number;
-  };
-};
 
 export type PppoeAdminActionRequest =
   | {
@@ -63,9 +48,12 @@ export type PppoeAdminActionRequest =
       servicioInternetId: number | null;
     }
   | {
-      action: "activar";
+      /*
+       * No necesita cuentaPppoeId porque el endpoint
+       * resuelve la cuenta a partir de instalacionId.
+       */
+      action: "activarInicial";
       instalacionId: number;
-      cuentaPppoeId: number;
     }
   | {
       action: "revelarCredenciales";
