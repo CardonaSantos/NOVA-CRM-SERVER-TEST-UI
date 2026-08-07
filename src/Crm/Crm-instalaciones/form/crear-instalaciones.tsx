@@ -2,27 +2,34 @@ import type { SubmitHandler, UseFormReturn } from "react-hook-form";
 
 import {
   AppForm,
-  AppFormDatePicker,
   AppFormInput,
   AppFormSingleSelect,
   AppFormSubmit,
   AppFormTextarea,
 } from "@/components/app/form";
-import { AppStack } from "@/components/app/primitives/app-stack";
+
 import { AppGrid } from "@/components/app/primitives/app-grid";
-import { AppSeparator } from "@/components/app/primitives/app-separator";
 import { AppInline } from "@/components/app/primitives/app-inline";
+import { AppSeparator } from "@/components/app/primitives/app-separator";
 import type { AppSelectOption } from "@/components/app/primitives/app-single-select";
+import { AppStack } from "@/components/app/primitives/app-stack";
+
 import {
   EstadoInstalacionCliente,
   MetodoAutenticacionInternet,
   TecnologiaAccesoInternet,
   TipoInstalacionCliente,
 } from "@/Crm/features/instalaciones/enums";
+
+import type { PerfilHomologacionSelectMeta } from "@/Crm/features/pppoe-homologaciones/intefaces";
+
+import type { CrearInstalacionFormValues } from "@/Crm/CrmHomologaciones/schema/schema";
+
 import { InstalacionAccesoSection } from "./instalacion-acceso-section";
+import { InstalacionCostosSection } from "./instalacion-costos-section";
+import { InstalacionProgramacionSection } from "./instalacion-programacion-section";
 import { InstalacionTecnicosSection } from "./instalacion-tecnicos-section";
-import { CrearInstalacionFormValues } from "@/Crm/CrmHomologaciones/schema/schema";
-import { PerfilHomologacionSelectMeta } from "@/Crm/features/pppoe-homologaciones/intefaces";
+import { InstalacionUbicacionSection } from "./instalacion-ubicacion-section";
 
 type InstalacionCreateFormProps = {
   form: UseFormReturn<CrearInstalacionFormValues>;
@@ -37,8 +44,6 @@ type InstalacionCreateFormProps = {
 
   tecnicoOptions: AppSelectOption<number>[];
 
-  routerOptions: AppSelectOption<number>[];
-
   tipoOptions: AppSelectOption<TipoInstalacionCliente>[];
 
   estadoOptions: AppSelectOption<EstadoInstalacionCliente>[];
@@ -47,6 +52,8 @@ type InstalacionCreateFormProps = {
 
   metodoAutenticacionOptions: AppSelectOption<MetodoAutenticacionInternet>[];
 
+  homologacionOptions: AppSelectOption<number, PerfilHomologacionSelectMeta>[];
+
   isLoadingClientes?: boolean;
 
   isLoadingServicios?: boolean;
@@ -54,10 +61,6 @@ type InstalacionCreateFormProps = {
   isLoadingTickets?: boolean;
 
   isLoadingTecnicos?: boolean;
-
-  isLoadingRouters?: boolean;
-
-  homologacionOptions: AppSelectOption<number, PerfilHomologacionSelectMeta>[];
 
   isLoadingHomologaciones?: boolean;
 };
@@ -82,6 +85,8 @@ export function InstalacionCreateForm({
 
   metodoAutenticacionOptions,
 
+  homologacionOptions,
+
   isLoadingClientes = false,
 
   isLoadingServicios = false,
@@ -90,9 +95,7 @@ export function InstalacionCreateForm({
 
   isLoadingTecnicos = false,
 
-  homologacionOptions,
-
-  isLoadingHomologaciones,
+  isLoadingHomologaciones = false,
 }: InstalacionCreateFormProps) {
   return (
     <AppForm form={form} onSubmit={onSubmit}>
@@ -137,7 +140,7 @@ export function InstalacionCreateForm({
                   name="servicioInternetId"
                   label="Servicio de internet"
                   options={servicioOptions}
-                  placeholder="Seleccione un servicio"
+                  placeholder="Derivado de la homologación"
                   density="compact"
                   isSearchable
                   isLoading={isLoadingServicios}
@@ -217,103 +220,26 @@ export function InstalacionCreateForm({
 
           <AppSeparator />
 
+          {/* Acceso */}
+
           <InstalacionAccesoSection
             tecnologiaOptions={tecnologiaOptions}
             metodoAutenticacionOptions={metodoAutenticacionOptions}
             homologacionOptions={homologacionOptions}
             isLoadingHomologaciones={isLoadingHomologaciones}
           />
+
           <AppSeparator />
 
           {/* Programación */}
 
-          <section aria-labelledby="instalacion-programacion-title">
-            <AppStack gap="sm">
-              <div>
-                <h2
-                  id="instalacion-programacion-title"
-                  className="text-base font-medium"
-                >
-                  Programación
-                </h2>
-
-                <p className="text-sm">
-                  Defina cuándo se realizará y, cuando corresponda, cuándo
-                  inicia.
-                </p>
-              </div>
-
-              <AppGrid
-                cols={{
-                  base: 1,
-                  md: 2,
-                }}
-                gap="sm"
-              >
-                <AppFormDatePicker<CrearInstalacionFormValues>
-                  name="fechaProgramada"
-                  label="Fecha programada"
-                />
-
-                <AppFormDatePicker<CrearInstalacionFormValues>
-                  name="fechaInicio"
-                  label="Fecha de inicio"
-                />
-              </AppGrid>
-            </AppStack>
-          </section>
+          <InstalacionProgramacionSection showFechaInicio />
 
           <AppSeparator />
 
           {/* Ubicación */}
 
-          <section aria-labelledby="instalacion-ubicacion-title">
-            <AppStack gap="sm">
-              <div>
-                <h2
-                  id="instalacion-ubicacion-title"
-                  className="text-base font-medium"
-                >
-                  Ubicación
-                </h2>
-
-                <p className="text-sm">
-                  Registre la dirección y pegue las coordenadas directamente
-                  desde Maps.
-                </p>
-              </div>
-
-              <AppGrid
-                cols={{
-                  base: 1,
-                  md: 2,
-                }}
-                gap="sm"
-              >
-                <AppFormInput<CrearInstalacionFormValues>
-                  name="direccionInstalacion"
-                  label="Dirección de instalación"
-                  placeholder="Ej. Barrio El Centro"
-                  clearable
-                />
-
-                <AppFormInput<CrearInstalacionFormValues>
-                  name="referenciaUbicacion"
-                  label="Referencia"
-                  placeholder="Ej. Casa de portón negro"
-                  clearable
-                />
-              </AppGrid>
-
-              <AppFormInput<CrearInstalacionFormValues>
-                name="coordenadas"
-                label="Coordenadas"
-                placeholder="Ej. 15.668, -91.735"
-                description="Pegue las coordenadas copiadas desde Google Maps."
-                clearable
-              />
-            </AppStack>
-          </section>
+          <InstalacionUbicacionSection />
 
           <AppSeparator />
 
@@ -328,68 +254,7 @@ export function InstalacionCreateForm({
 
           {/* Costos */}
 
-          <section aria-labelledby="instalacion-costos-title">
-            <AppStack gap="sm">
-              <div>
-                <h2
-                  id="instalacion-costos-title"
-                  className="text-base font-medium"
-                >
-                  Costos
-                </h2>
-
-                <p className="text-sm">
-                  Registre únicamente los montos conocidos. Los campos vacíos no
-                  se enviarán.
-                </p>
-              </div>
-
-              <AppGrid
-                cols={{
-                  base: 1,
-                  sm: 2,
-                  xl: 3,
-                }}
-                gap="sm"
-              >
-                <AppFormInput<CrearInstalacionFormValues>
-                  name="costos.costoInstalacion"
-                  label="Costo de instalación"
-                  placeholder="0.00"
-                  inputMode="decimal"
-                />
-
-                <AppFormInput<CrearInstalacionFormValues>
-                  name="costos.costoMateriales"
-                  label="Costo de materiales"
-                  placeholder="0.00"
-                  inputMode="decimal"
-                />
-
-                <AppFormInput<CrearInstalacionFormValues>
-                  name="costos.costoManoObra"
-                  label="Costo de mano de obra"
-                  placeholder="0.00"
-                  inputMode="decimal"
-                />
-
-                <AppFormInput<CrearInstalacionFormValues>
-                  name="costos.costoOtros"
-                  label="Otros costos"
-                  placeholder="0.00"
-                  inputMode="decimal"
-                />
-              </AppGrid>
-
-              <AppFormTextarea<CrearInstalacionFormValues>
-                name="costos.notas"
-                label="Notas de costos"
-                placeholder="Observaciones sobre materiales, cobros o gastos"
-                rows={3}
-                resizeMode="vertical"
-              />
-            </AppStack>
-          </section>
+          <InstalacionCostosSection />
 
           <AppSeparator />
 

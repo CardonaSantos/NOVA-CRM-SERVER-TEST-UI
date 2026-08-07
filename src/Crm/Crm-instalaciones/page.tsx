@@ -24,7 +24,6 @@ import { getApiErrorMessageAxios } from "@/utils/getApiAxiosMessage";
 import { useStoreCrm } from "../ZustandCrm/ZustandCrmContext";
 import { AppConfirmDialog } from "@/components/app/primitives/app-confirm-dialog";
 import { PageTransitionCrm } from "@/components/Layout/page-transition";
-import { useGetMikroTiks } from "../CrmHooks/hooks/Mikrotik/useGetMikroTik";
 import { ReplaceUnderlines } from "@/utils/replaceUnderlines";
 import {
   CREAR_INSTALACION_DEFAULT_VALUES,
@@ -46,10 +45,8 @@ function InstalacionesMainPage() {
   const { data: servicios = [], isLoading: isLoadingServicios } =
     useGetServiciosWifi();
 
-  const { data: routers = [], isLoading: isLoadingRouters } = useGetMikroTiks();
-
-  const { data: homologacionOptions = [] } = useGetHomologacionesSelect();
-
+  const { data: homologacionOptions = [], isLoading: isLoadingHomologaciones } =
+    useGetHomologacionesSelect();
   const {
     data: tickets = {
       data: [],
@@ -122,17 +119,6 @@ function InstalacionesMainPage() {
         label: ticket.title,
       })),
     [tickets],
-  );
-
-  const routerOptions = useMemo(
-    () =>
-      routers
-        .filter((router) => router.empresaId === empresaId && router.activo)
-        .map((router) => ({
-          value: router.id,
-          label: `${router.nombre} · ${router.host}`,
-        })),
-    [empresaId, routers],
   );
 
   const tipoOptions = useMemo(
@@ -253,23 +239,22 @@ function InstalacionesMainPage() {
         <AppStack gap="md">
           <AppCard size="sm">
             <InstalacionCreateForm
+              estadoOptions={estadoOptions}
               form={form}
               onSubmit={onSubmit}
               clienteOptions={clienteOptions}
               servicioOptions={servicioOptions}
               ticketOptions={ticketOptions}
               tecnicoOptions={tecnicoOptions}
-              routerOptions={routerOptions}
               tipoOptions={tipoOptions}
-              estadoOptions={estadoOptions}
               tecnologiaOptions={tecnologiaOptions}
               metodoAutenticacionOptions={metodoAutenticacionOptions}
+              homologacionOptions={homologacionOptions}
               isLoadingClientes={isLoadingClientes}
               isLoadingServicios={isLoadingServicios}
               isLoadingTickets={isLoadingTickets}
               isLoadingTecnicos={isLoadingTecnicos}
-              isLoadingRouters={isLoadingRouters}
-              homologacionOptions={homologacionOptions}
+              isLoadingHomologaciones={isLoadingHomologaciones}
             />
           </AppCard>
         </AppStack>

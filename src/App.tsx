@@ -66,6 +66,7 @@ import InstalacionDetailPage from "./Crm/Crm-instalaciones/details/instalacion-d
 import PerfilesHomologacionPage from "./Crm/CrmHomologaciones/page";
 import TecnicoInstalacionesPage from "./Crm/CrmTecInstalaciones/page";
 import TecnicoInstalacionDetallePage from "./Crm/CrmInstalacionesDetalle/TecnicoInstalacionDetallePage";
+import EditarInstalacionPage from "./Crm/Crm-instalaciones/EditarInstalacionPage";
 
 // COMENTARIO DE ULTIMO COMMIT
 
@@ -353,6 +354,11 @@ function App() {
           <Route
             path="/crm/crear-instalacion"
             element={adminRoute(<InstalacionesMainPage />)}
+          />
+
+          <Route
+            path="/crm/instalaciones/:instalacionId/editar"
+            element={adminRoute(<EditarInstalacionPage />)}
           />
 
           <Route

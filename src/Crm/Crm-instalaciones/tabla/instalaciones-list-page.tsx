@@ -89,6 +89,10 @@ function InstalacionesListPage() {
         onViewInstalacion: (instalacionId) => {
           navigate(INSTALACIONES_ROUTES.detalle(instalacionId));
         },
+
+        onEditInstalacion: (instalacionId) => {
+          navigate(INSTALACIONES_ROUTES.editar(instalacionId));
+        },
       }),
     [navigate],
   );

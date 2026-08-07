@@ -11,6 +11,9 @@ export const crm_endpoints = {
 
     get_instalacion: (id: number) => `/cliente-instalaciones/${id}`,
 
+    patch_instalacion: (instalacionId: number) =>
+      `/cliente-instalaciones/${instalacionId}`,
+
     post_evidencias: (instalacionId: number, empresaId: number) =>
       `/cliente-instalaciones/${instalacionId}/evidencias/upload?empresaId=${empresaId}`,
 
@@ -72,7 +75,7 @@ export const crm_endpoints = {
     post_activar_instalacion: (instalacionId: number) =>
       `/cliente-instalaciones/${instalacionId}/pppoe/activar`,
     pppoe_perfil_homologacion_seleccionables:
-      "/pppoe-perfil-homologacion/select",
+      "/ppoe-perfil-homologacion/select",
 
     post_reintentar_prealta: (
       instalacionId: number,

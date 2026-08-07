@@ -24,6 +24,10 @@ import {
   ReprogramarInstalacionTecnicaPayload,
 } from "@/Crm/features/instalaciones_tecnico/acciones-instalacion.payload";
 import { ReintentarPrealtaPppoeResponse } from "@/Crm/features/instalaciones_tecnico/reintentar-prealta.response";
+import {
+  ActualizarClienteInstalacionPayload,
+  ActualizarClienteInstalacionResponse,
+} from "@/Crm/features/instalaciones/edicion-instalaciones";
 
 /**
  * LISTAR INSTALACIONES PAGINADAS CON FILTRO
@@ -57,6 +61,29 @@ export function useCreateInstalacion() {
       invalidate(instalacionesQkeys.all);
     },
   });
+}
+
+/**
+ * ACTUALIZAR INSTALACION / REASIGNACION DE TECNICOS Y ENCARGADO
+ */
+export function usePatchInstalacion(instalacionId: number) {
+  const invalidate = useInvalidateQk();
+
+  return crm.useMutationApi<
+    ActualizarClienteInstalacionResponse,
+    ActualizarClienteInstalacionPayload
+  >(
+    "patch",
+    crm_endpoints.instalaciones.patch_instalacion(instalacionId),
+    undefined,
+    {
+      onSuccess: () => {
+        invalidate(instalacionesQkeys.all);
+
+        invalidate(instalacionesQkeys.specific(instalacionId));
+      },
+    },
+  );
 }
 
 /**
