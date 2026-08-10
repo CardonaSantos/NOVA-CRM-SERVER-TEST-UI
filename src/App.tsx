@@ -69,6 +69,8 @@ import TecnicoInstalacionDetallePage from "./Crm/CrmInstalacionesDetalle/Tecnico
 import EditarInstalacionPage from "./Crm/Crm-instalaciones/EditarInstalacionPage";
 import DesinstalacionesPage from "./Crm/CrmDesinstalaciones/DesinstalacionesPage";
 import DesinstalacionDetallePage from "./Crm/CrmDesinstalaciones/DesinstalacionDetallePage";
+import DesinstalacionCreatePage from "./Crm/CrmDesinstalaciones/create/common/crear-desinstalacion.mapper";
+import AutorizacionesDesinstalacionPage from "./Crm/CrmDesinstalacionesAuth/AutorizacionesDesinstalacionPage";
 
 // COMENTARIO DE ULTIMO COMMIT
 
@@ -402,12 +404,12 @@ function App() {
 
           <Route
             path="/crm/crear-desinstalacion"
-            element={adminRoute(<PerfilesHomologacionPage />)}
+            element={adminRoute(<DesinstalacionCreatePage />)}
           />
 
           <Route
             path="/crm/desinstalacion-auth"
-            element={adminRoute(<PerfilesHomologacionPage />)}
+            element={adminRoute(<AutorizacionesDesinstalacionPage />)}
           />
         </Route>
 

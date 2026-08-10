@@ -43,6 +43,24 @@ export const crm_endpoints = {
 
     post_evidencias: (desinstalacionId: number) =>
       `/cliente-desinstalaciones/${desinstalacionId}/evidencias/upload`,
+
+    get_contexto_creacion: (clienteId: number) =>
+      `/cliente-desinstalaciones/contexto-creacion/${clienteId}`,
+
+    post_desinstalacion: "/cliente-desinstalaciones",
+
+    post_solicitar_autorizacion: (desinstalacionId: number) =>
+      `/cliente-desinstalaciones/${desinstalacionId}/autorizaciones`,
+
+    // auth
+    get_autorizaciones_pendientes:
+      "/cliente-desinstalaciones/autorizaciones/pendientes",
+
+    patch_aprobar_autorizacion: (autorizacionId: number) =>
+      `/cliente-desinstalaciones/autorizaciones/${autorizacionId}/aprobar`,
+
+    patch_rechazar_autorizacion: (autorizacionId: number) =>
+      `/cliente-desinstalaciones/autorizaciones/${autorizacionId}/rechazar`,
   },
 
   customer: {

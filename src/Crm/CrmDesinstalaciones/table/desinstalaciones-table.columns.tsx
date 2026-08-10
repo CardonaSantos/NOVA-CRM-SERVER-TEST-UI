@@ -1,6 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 
-import { Eye } from "lucide-react";
+import { Eye, ShieldCheck } from "lucide-react";
 
 import { Link } from "react-router-dom";
 
@@ -31,8 +31,11 @@ type AppBadgeTone =
 
 export type DesinstalacionTableColumnActions = {
   onViewDesinstalacion: (desinstalacionId: number) => void;
-};
 
+  onSolicitarAutorizacion: (
+    desinstalacion: ClienteDesinstalacionListItem,
+  ) => void;
+};
 const tableMutedTextClass =
   "text-[hsl(var(--app-table-cell-muted-fg,var(--app-muted-foreground)))]";
 
@@ -352,11 +355,11 @@ export function createDesinstalacionesTableColumns(
 
       header: "PPPoE",
 
-      size: 130,
+      size: 155,
 
-      minSize: 105,
+      minSize: 125,
 
-      maxSize: 110,
+      maxSize: 170,
 
       enableSorting: false,
 
@@ -370,19 +373,22 @@ export function createDesinstalacionesTableColumns(
         }
 
         return (
-          <div className="min-w-0">
+          <div
+            className="flex min-w-0 items-center gap-1.5 whitespace-nowrap"
+            title={`${humanizeEnum(cuenta.estado)} · ${cuenta.usuario}`}
+          >
             <AppBadge
               tone={getPppoeTone(cuenta.estado)}
               appearance="soft"
               size="xs"
               radius="full"
+              className="shrink-0"
             >
               {humanizeEnum(cuenta.estado)}
             </AppBadge>
 
             <span
-              className={`mt-1 block truncate font-mono text-[10px] ${tableMutedTextClass}`}
-              title={cuenta.usuario}
+              className={`min-w-0 truncate font-mono text-[10px] ${tableMutedTextClass}`}
             >
               {cuenta.usuario}
             </span>
@@ -473,15 +479,61 @@ export function createDesinstalacionesTableColumns(
 
       size: 44,
 
-      actions: (row) => [
-        {
-          label: "Ver desinstalación",
+      actions: (row) => {
+        const desinstalacion = row.original;
 
-          icon: <Eye size={14} />,
+        const estadoAutorizacion =
+          desinstalacion.ultimaAutorizacion?.estado ?? null;
 
-          onClick: () => actions.onViewDesinstalacion(row.original.id),
-        },
-      ],
+        const esFinalizada =
+          desinstalacion.estado === EstadoDesinstalacionCliente.COMPLETADA ||
+          desinstalacion.estado === EstadoDesinstalacionCliente.CANCELADA ||
+          desinstalacion.estado === EstadoDesinstalacionCliente.FALLIDA;
+
+        /**
+         * Se puede solicitar cuando:
+         *
+         * - todavía no existe autorización;
+         * - la última fue RECHAZADA.
+         *
+         * No permitimos:
+         *
+         * - PENDIENTE;
+         * - APROBADA;
+         * - desinstalaciones finalizadas.
+         */
+        const puedeSolicitarAutorizacion =
+          !esFinalizada &&
+          (estadoAutorizacion === null ||
+            estadoAutorizacion === EstadoAutorizacionDesinstalacion.RECHAZADA);
+
+        return [
+          {
+            label: "Ver desinstalación",
+
+            icon: <Eye size={14} />,
+
+            onClick: () => actions.onViewDesinstalacion(desinstalacion.id),
+          },
+
+          ...(puedeSolicitarAutorizacion
+            ? [
+                {
+                  label:
+                    estadoAutorizacion ===
+                    EstadoAutorizacionDesinstalacion.RECHAZADA
+                      ? "Solicitar nuevamente"
+                      : "Solicitar autorización",
+
+                  icon: <ShieldCheck size={14} />,
+
+                  onClick: () =>
+                    actions.onSolicitarAutorizacion(desinstalacion),
+                },
+              ]
+            : []),
+        ];
+      },
     }),
   ];
 }

@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 
 import {
+  useAppDisclosure,
   useAppStateHandlers,
   useAppTableHandlers,
 } from "@/components/app/handlers";
@@ -28,6 +29,7 @@ import { DESINSTALACIONES_ROUTES } from "./table/routes.route";
 import { DesinstalacionesTable } from "./table/desinstalaciones-table";
 import { PaginationMeta } from "../features/instalaciones/instalaciones.interfaces";
 import { DesinstalacionesListFilters } from "./filttros";
+import { SolicitarAutorizacionDesinstalacionDialog } from "./actions/solicitar-autorizacion-desinstalacion-dialog";
 
 const EMPTY_ITEMS: ClienteDesinstalacionListItem[] = [];
 
@@ -43,6 +45,37 @@ const EMPTY_META: PaginationMeta = {
 
 function DesinstalacionesListPage() {
   const navigate = useNavigate();
+
+  const solicitudAutorizacionDialog = useAppDisclosure();
+
+  const [solicitudAutorizacionTarget, setSolicitudAutorizacionTarget] =
+    useState<ClienteDesinstalacionListItem | null>(null);
+
+  const handleSolicitarAutorizacion = useCallback(
+    (desinstalacion: ClienteDesinstalacionListItem) => {
+      setSolicitudAutorizacionTarget(desinstalacion);
+
+      solicitudAutorizacionDialog.open();
+    },
+    [solicitudAutorizacionDialog.open],
+  );
+
+  const handleSolicitudAutorizacionOpenChange = useCallback(
+    (open: boolean) => {
+      solicitudAutorizacionDialog.setOpen(open);
+
+      if (!open) {
+        setSolicitudAutorizacionTarget(null);
+      }
+    },
+    [solicitudAutorizacionDialog.setOpen],
+  );
+
+  const handleSolicitudAutorizacionCompleted = useCallback(() => {
+    solicitudAutorizacionDialog.setOpen(false);
+
+    setSolicitudAutorizacionTarget(null);
+  }, [solicitudAutorizacionDialog.setOpen]);
 
   const empresaId = useStoreCrm((state) => state.empresaId) ?? 0;
 
@@ -88,8 +121,10 @@ function DesinstalacionesListPage() {
         onViewDesinstalacion: (desinstalacionId) => {
           navigate(DESINSTALACIONES_ROUTES.detalle(desinstalacionId));
         },
+
+        onSolicitarAutorizacion: handleSolicitarAutorizacion,
       }),
-    [navigate],
+    [handleSolicitarAutorizacion, navigate],
   );
 
   /*
@@ -202,6 +237,15 @@ function DesinstalacionesListPage() {
             onRetry={() => desinstalacionesQuery.refetch()}
           />
         </AppStack>
+
+        {solicitudAutorizacionTarget ? (
+          <SolicitarAutorizacionDesinstalacionDialog
+            desinstalacionId={solicitudAutorizacionTarget.id}
+            open={solicitudAutorizacionDialog.isOpen}
+            onOpenChange={handleSolicitudAutorizacionOpenChange}
+            onCompleted={handleSolicitudAutorizacionCompleted}
+          />
+        ) : null}
       </AppContainer>
     </PageTransitionCrm>
   );
