@@ -35,6 +35,16 @@ export const crm_endpoints = {
       `/cliente-instalaciones/cancelar/${instalacionId}`,
   },
 
+  desinstalaciones: {
+    get_desinstalaciones_paginated: "/cliente-desinstalaciones",
+
+    get_desinstalacion: (desinstalacionId: number) =>
+      `/cliente-desinstalaciones/${desinstalacionId}`,
+
+    post_evidencias: (desinstalacionId: number) =>
+      `/cliente-desinstalaciones/${desinstalacionId}/evidencias/upload`,
+  },
+
   customer: {
     create: "/internet-customer/create-new-customer",
 

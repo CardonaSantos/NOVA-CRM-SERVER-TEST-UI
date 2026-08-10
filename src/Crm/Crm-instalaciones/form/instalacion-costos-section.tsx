@@ -21,9 +21,11 @@ type Props = {
   showMontoCobradoCliente?: boolean;
 };
 
-export function InstalacionCostosSection({
-  showMontoCobradoCliente = false,
-}: Props) {
+export function InstalacionCostosSection(
+  {
+    // showMontoCobradoCliente = false,
+  }: Props,
+) {
   useFormContext<InstalacionCostosFormFields>();
 
   return (
@@ -74,15 +76,6 @@ export function InstalacionCostosSection({
             placeholder="0.00"
             inputMode="decimal"
           />
-
-          {showMontoCobradoCliente ? (
-            <AppFormInput<InstalacionCostosFormFields>
-              name="costos.montoCobradoCliente"
-              label="Monto cobrado al cliente"
-              placeholder="0.00"
-              inputMode="decimal"
-            />
-          ) : null}
         </AppGrid>
 
         <AppFormTextarea<InstalacionCostosFormFields>

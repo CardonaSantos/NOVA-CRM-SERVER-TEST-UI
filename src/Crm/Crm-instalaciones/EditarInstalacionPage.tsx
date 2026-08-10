@@ -1,44 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-
 import { useNavigate, useParams } from "react-router-dom";
-
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import { useForm, type SubmitHandler } from "react-hook-form";
-
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-
 import { useAppConfirmHandler } from "@/components/app/handlers";
-
-import { AppButton } from "@/components/app/primitives/app-button";
 import { AppCard } from "@/components/app/primitives/app-card";
 import { AppConfirmDialog } from "@/components/app/primitives/app-confirm-dialog";
 import { AppContainer } from "@/components/app/primitives/app-container";
 import { AppDataState } from "@/components/app/primitives/app-data-state";
 import { AppEmptyState } from "@/components/app/primitives/app-empty-state";
-import { AppInline } from "@/components/app/primitives/app-inline";
-import { AppStack } from "@/components/app/primitives/app-stack";
-
 import { PageTransitionCrm } from "@/components/Layout/page-transition";
-
 import {
   useGetInstalacion,
   usePatchInstalacion,
 } from "../CrmHooks/hooks/instalaciones/instalaciones-hook";
-
 import { useGetUsersToSelect } from "../CrmHooks/hooks/useUsuarios/use-usuers";
 import { useGetTicketsSoporte } from "../CrmHooks/hooks/use-tickets/useTicketsSoporte";
-
 import { useStoreCrm } from "../ZustandCrm/ZustandCrmContext";
-
 import {
   EstadoInstalacionCliente,
   TipoInstalacionCliente,
 } from "../features/instalaciones/enums";
-
 import { InstalacionEditForm } from "./form/editar-instalacion";
-
 import { ReplaceUnderlines } from "@/utils/replaceUnderlines";
 import { getApiErrorMessageAxios } from "@/utils/getApiAxiosMessage";
 import {
@@ -48,10 +31,9 @@ import {
 } from "../CrmHomologaciones/schema/editar-stalacion.schema";
 import { toActualizarInstalacionPayload } from "../CrmHomologaciones/common/mapper-patch";
 import { toEditarInstalacionFormValues } from "../CrmHomologaciones/common/editar-instalacion-mapper";
+import { AppStack } from "@/components/app/primitives/app-stack";
 
 export default function EditarInstalacionPage() {
-  const navigate = useNavigate();
-
   const params = useParams<{
     instalacionId?: string;
   }>();
@@ -228,22 +210,6 @@ export default function EditarInstalacionPage() {
     [detalle, form, instalacionQuery, patchInstalacion, updateConfirm.confirm],
   );
 
-  /*
-   * =====================================================
-   * NAVIGATION
-   * =====================================================
-   */
-
-  const handleBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
-
-  /*
-   * =====================================================
-   * INVALID ID
-   * =====================================================
-   */
-
   if (!validInstalacionId) {
     return (
       <AppContainer size="md" paddingX="sm" paddingY="sm">
@@ -255,11 +221,7 @@ export default function EditarInstalacionPage() {
     );
   }
 
-  /*
-   * =====================================================
-   * RENDER
-   * =====================================================
-   */
+  // RENDER
 
   return (
     <PageTransitionCrm

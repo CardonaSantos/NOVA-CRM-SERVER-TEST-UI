@@ -67,6 +67,8 @@ import PerfilesHomologacionPage from "./Crm/CrmHomologaciones/page";
 import TecnicoInstalacionesPage from "./Crm/CrmTecInstalaciones/page";
 import TecnicoInstalacionDetallePage from "./Crm/CrmInstalacionesDetalle/TecnicoInstalacionDetallePage";
 import EditarInstalacionPage from "./Crm/Crm-instalaciones/EditarInstalacionPage";
+import DesinstalacionesPage from "./Crm/CrmDesinstalaciones/DesinstalacionesPage";
+import DesinstalacionDetallePage from "./Crm/CrmDesinstalaciones/DesinstalacionDetallePage";
 
 // COMENTARIO DE ULTIMO COMMIT
 
@@ -383,6 +385,28 @@ function App() {
 
           <Route
             path="/crm/pppoe/homologacion-perfiles"
+            element={adminRoute(<PerfilesHomologacionPage />)}
+          />
+
+          {/* DESINSTALACIONES */}
+
+          <Route
+            path="/crm/desinstalaciones"
+            element={adminRoute(<DesinstalacionesPage />)}
+          />
+
+          <Route
+            path="/crm/desinstalacion/:desinstalacionId"
+            element={adminRoute(<DesinstalacionDetallePage />)}
+          />
+
+          <Route
+            path="/crm/crear-desinstalacion"
+            element={adminRoute(<PerfilesHomologacionPage />)}
+          />
+
+          <Route
+            path="/crm/desinstalacion-auth"
             element={adminRoute(<PerfilesHomologacionPage />)}
           />
         </Route>
