@@ -140,24 +140,31 @@ export function getPrimaryWorkflowAction(
   return null;
 }
 
-export function getActionLabel(action: InstalacionDetalleActionKey) {
+export function getActionLabel(action: InstalacionDetalleActionKey): string {
   switch (action) {
+    case "iniciar":
+      return "Iniciar instalación";
+
+    case "completar":
+      return "Finalizar instalación";
+
     case "reprogramar":
       return "Reprogramar";
-    case "iniciar":
-      return "Iniciar";
-    case "completar":
-      return "Completar";
+
     case "cancelar":
-      return "Cancelar";
+      return "Cancelar instalación";
+
     case "subirEvidencia":
-      return "Subir evidencia";
+      return "Subir evidencias";
+
     case "revelarCredenciales":
       return "Ver credenciales";
+
     case "reintentarPrealta":
       return "Reintentar prealta";
+
     default:
-      return formatEnumValue(action);
+      return "Acción";
   }
 }
 

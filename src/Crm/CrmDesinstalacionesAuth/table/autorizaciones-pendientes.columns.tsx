@@ -8,9 +8,10 @@ import { AppBadge } from "@/components/app/primitives/app-badge";
 
 import { createAppRowActionsColumn } from "@/components/app/table/app-table-row-actions";
 
-import { formattMonedaGT } from "@/Crm/Utils/formattMonedaGT";
 import { AutorizacionPendienteListItem } from "@/Crm/features/desinstalaciones/auth/autorizaciones-desinstalacion.interfaces";
 import { DESINSTALACIONES_ROUTES } from "@/Crm/CrmDesinstalaciones/table/routes.route";
+import { formattShortFecha } from "@/utils/formattFechas";
+import { EstadoAutorizacionDesinstalacion } from "@/Crm/features/desinstalaciones/desinstalaciones.enums";
 
 export type AutorizacionesPendientesTableActions = {
   onViewDesinstalacion: (desinstalacionId: number) => void;
@@ -25,26 +26,6 @@ const mutedClass =
 
 const linkClass =
   "text-[hsl(var(--app-table-cell-link-fg,var(--app-primary)))]";
-
-const dateTimeFormatter = new Intl.DateTimeFormat("es-GT", {
-  dateStyle: "short",
-
-  timeStyle: "short",
-});
-
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return "Sin fecha";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Fecha inválida";
-  }
-
-  return dateTimeFormatter.format(date);
-}
 
 function humanizeEnum(value: string) {
   return value
@@ -63,6 +44,35 @@ function getClienteNombre(item: AutorizacionPendienteListItem) {
     .join(" ");
 }
 
+type AppBadgeTone =
+  | "neutral"
+  | "primary"
+  | "success"
+  | "warning"
+  | "danger"
+  | "info";
+
+export function getAutorizacionDesinstalacionTone(
+  estado: EstadoAutorizacionDesinstalacion,
+): AppBadgeTone {
+  switch (estado) {
+    case EstadoAutorizacionDesinstalacion.PENDIENTE:
+      return "warning";
+
+    case EstadoAutorizacionDesinstalacion.APROBADA:
+      return "success";
+
+    case EstadoAutorizacionDesinstalacion.RECHAZADA:
+      return "danger";
+
+    case EstadoAutorizacionDesinstalacion.ANULADA:
+      return "neutral";
+
+    default:
+      return "neutral";
+  }
+}
+
 export function createAutorizacionesPendientesColumns(
   actions: AutorizacionesPendientesTableActions,
 ): ColumnDef<AutorizacionPendienteListItem, any>[] {
@@ -72,7 +82,7 @@ export function createAutorizacionesPendientesColumns(
 
       header: "ID",
 
-      size: 55,
+      size: 40,
 
       minSize: 45,
 
@@ -116,10 +126,6 @@ export function createAutorizacionesPendientesColumns(
             >
               {nombre}
             </Link>
-
-            <span className={`mt-0.5 block truncate text-[10px] ${mutedClass}`}>
-              {item.desinstalacion.cliente.telefono}
-            </span>
           </div>
         );
       },
@@ -130,9 +136,9 @@ export function createAutorizacionesPendientesColumns(
 
       header: "Servicio",
 
-      size: 145,
+      size: 100,
 
-      minSize: 120,
+      minSize: 100,
 
       accessorFn: (row) => row.desinstalacion.servicioInternet?.nombre ?? null,
 
@@ -149,10 +155,6 @@ export function createAutorizacionesPendientesColumns(
           <div className="min-w-0">
             <span className="block truncate text-xs font-medium">
               {servicio.nombre}
-            </span>
-
-            <span className={`block truncate text-[10px] ${mutedClass}`}>
-              {formattMonedaGT(servicio.precio)}
             </span>
           </div>
         );
@@ -207,9 +209,9 @@ export function createAutorizacionesPendientesColumns(
 
       header: "Solicitada",
 
-      size: 130,
+      size: 100,
 
-      minSize: 115,
+      minSize: 100,
 
       accessorFn: (row) => row.autorizacion.fechaSolicitud,
 
@@ -217,7 +219,7 @@ export function createAutorizacionesPendientesColumns(
         <span
           className={`whitespace-nowrap text-xs tabular-nums ${mutedClass}`}
         >
-          {formatDateTime(row.original.autorizacion.fechaSolicitud)}
+          {formattShortFecha(row.original.autorizacion.fechaSolicitud)}
         </span>
       ),
     },
@@ -227,9 +229,9 @@ export function createAutorizacionesPendientesColumns(
 
       header: "Programada",
 
-      size: 130,
+      size: 100,
 
-      minSize: 115,
+      minSize: 100,
 
       accessorFn: (row) => row.desinstalacion.fechaProgramada,
 
@@ -237,7 +239,7 @@ export function createAutorizacionesPendientesColumns(
         <span
           className={`whitespace-nowrap text-xs tabular-nums ${mutedClass}`}
         >
-          {formatDateTime(row.original.desinstalacion.fechaProgramada)}
+          {formattShortFecha(row.original.desinstalacion.fechaProgramada)}
         </span>
       ),
     },
@@ -247,15 +249,22 @@ export function createAutorizacionesPendientesColumns(
 
       header: "Tipo",
 
-      size: 105,
+      size: 90,
 
       minSize: 90,
 
       accessorFn: (row) => row.desinstalacion.tipo,
 
       cell: ({ row }) => (
-        <AppBadge tone="info" appearance="soft" size="xs" radius="full">
-          {humanizeEnum(row.original.desinstalacion.tipo)}
+        <AppBadge
+          tone={getAutorizacionDesinstalacionTone(
+            row.original.autorizacion.estado,
+          )}
+          appearance="soft"
+          size="xs"
+          radius="full"
+        >
+          {humanizeEnum(row.original.autorizacion.estado)}
         </AppBadge>
       ),
     },

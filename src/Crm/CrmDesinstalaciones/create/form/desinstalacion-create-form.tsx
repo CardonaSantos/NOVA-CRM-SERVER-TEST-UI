@@ -1,5 +1,4 @@
 import type { SubmitHandler, UseFormReturn } from "react-hook-form";
-
 import {
   AppForm,
   AppFormSingleSelect,
@@ -8,23 +7,17 @@ import {
   AppFormTextarea,
   AppFormInput,
 } from "@/components/app/form";
-
 import { AppGrid } from "@/components/app/primitives/app-grid";
 import { AppInline } from "@/components/app/primitives/app-inline";
 import { AppSeparator } from "@/components/app/primitives/app-separator";
 import { AppStack } from "@/components/app/primitives/app-stack";
-
 import type { AppSelectOption } from "@/components/app/primitives/app-single-select";
-
 import type { ContextoCreacionDesinstalacionResponse } from "@/Crm/features/desinstalaciones/contexto-creacion.interfaces";
-
 import type {
   MotivoDesinstalacionCliente,
   TipoDesinstalacionCliente,
 } from "@/Crm/features/desinstalaciones/desinstalaciones.enums";
-
 import { DesinstalacionClienteAccesoSection } from "./desinstalacion-cliente-acceso-section";
-
 import { DesinstalacionTecnicosSection } from "./desinstalacion-tecnicos-section";
 import { CrearDesinstalacionFormValues } from "../../schemas/crear-desinstalacion.schema";
 
@@ -150,7 +143,6 @@ export function DesinstalacionCreateForm({
                   type="datetime-local"
                   label="Fecha programada"
                   hint="Fecha y hora previstas para el retiro físico."
-                  required
                 />
 
                 <div className="flex items-end">

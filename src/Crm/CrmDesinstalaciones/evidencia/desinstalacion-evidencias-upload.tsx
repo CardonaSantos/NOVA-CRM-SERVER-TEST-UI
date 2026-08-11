@@ -401,13 +401,12 @@ export const DesinstalacionEvidenciasUpload = memo(
         return;
       }
 
-      const sinTipo = evidencias.filter((evidencia) => !evidencia.tipo);
+      // const sinTipo = evidencias.filter((evidencia) => !evidencia.tipo);
+      // if (sinTipo.length > 0) {
+      //   toast.error("Todas las imágenes deben tener un tipo de evidencia.");
 
-      if (sinTipo.length > 0) {
-        toast.error("Todas las imágenes deben tener un tipo de evidencia.");
-
-        return;
-      }
+      //   return;
+      // }
 
       const failedIds = new Set<string>();
 
@@ -437,7 +436,7 @@ export const DesinstalacionEvidenciasUpload = memo(
           const body = buildEvidenciaDesinstalacionFormData({
             file: evidencia.file,
 
-            tipo: evidencia.tipo!,
+            tipo: evidencia.tipo,
 
             descripcion: evidencia.descripcion.trim() || undefined,
 
@@ -508,11 +507,9 @@ export const DesinstalacionEvidenciasUpload = memo(
       );
     }, [evidencias, handleUpdateEvidencia, uploadMutation]);
 
-    const canSubmit =
-      !disabled &&
-      evidencias.length > 0 &&
-      evidencias.every((evidencia) => evidencia.tipo !== null) &&
-      !isSubmittingBatch;
+    const canSubmit = !disabled && evidencias.length > 0 && !isSubmittingBatch;
+    // evidencias.length > 0 &&
+    // evidencias.every((evidencia) => evidencia.tipo !== null) &&
 
     return (
       <>

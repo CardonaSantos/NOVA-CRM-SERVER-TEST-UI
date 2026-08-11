@@ -118,8 +118,16 @@ export interface InstalacionTecnicaDetalleCliente {
   id: number;
   nombreCompleto: string;
   telefono: string | null;
+  telefonoReferencia: string | null;
   dpi: string | null;
   direccion: string | null;
+
+  observaciones: string | null;
+
+  municipio: string | null;
+  departamento: string | null;
+
+  sector: string | null;
 }
 
 export interface InstalacionTecnicaDetalleCobro {

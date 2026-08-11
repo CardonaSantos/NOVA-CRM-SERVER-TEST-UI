@@ -42,9 +42,7 @@ import { AppSelectOption } from "@/components/app/primitives/app-single-select";
 
 function DesinstalacionCreatePage() {
   /**
-   * ============================================================
    * CATÁLOGOS
-   * ============================================================
    */
 
   const { data: clientes = [], isLoading: isLoadingClientes } =
@@ -54,9 +52,7 @@ function DesinstalacionCreatePage() {
     useGetUsersToSelect();
 
   /**
-   * ============================================================
    * FORM
-   * ============================================================
    */
 
   const form = useForm<CrearDesinstalacionFormValues>({
@@ -68,7 +64,7 @@ function DesinstalacionCreatePage() {
   });
 
   /**
-   * Solo observamos clienteId porque es la dependencia
+   *  clienteId porque es la dependencia
    * que determina el contexto de creación.
    */
   const clienteId = useWatch({
@@ -78,9 +74,7 @@ function DesinstalacionCreatePage() {
   });
 
   /**
-   * ============================================================
    * CONTEXTO DEPENDIENTE DEL CLIENTE
-   * ============================================================
    */
 
   const {
@@ -92,17 +86,13 @@ function DesinstalacionCreatePage() {
   } = useGetContextoCreacionDesinstalacion(clienteId);
 
   /**
-   * ============================================================
    * MUTATION
-   * ============================================================
    */
 
   const createDesinstalacion = useCreateDesinstalacion();
 
   /**
-   * ============================================================
    * OPTIONS
-   * ============================================================
    */
 
   const clienteOptions = useMemo<AppSelectOption<number>[]>(
@@ -177,9 +167,7 @@ function DesinstalacionCreatePage() {
   );
 
   /**
-   * ============================================================
    * SUBMIT
-   * ============================================================
    */
 
   const createConfirm = useAppConfirmHandler<CrearDesinstalacionFormValues>();

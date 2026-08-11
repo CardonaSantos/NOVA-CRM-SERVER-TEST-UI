@@ -35,28 +35,35 @@ export type EvidenciaDesinstalacionDraft = {
 export type SubirEvidenciaDesinstalacionPayload = {
   file: File;
 
-  tipo: TipoEvidenciaClienteOperacion;
+  tipo?: TipoEvidenciaClienteOperacion | null;
 
   descripcion?: string | null;
 
   orden?: number;
 };
 
-export function buildEvidenciaDesinstalacionFormData(
-  payload: SubirEvidenciaDesinstalacionPayload,
-): FormData {
+export function buildEvidenciaDesinstalacionFormData({
+  file,
+  tipo,
+  descripcion,
+  orden,
+}: SubirEvidenciaDesinstalacionPayload) {
   const formData = new FormData();
 
-  formData.append("file", payload.file);
+  formData.append("file", file);
 
-  formData.append("tipo", payload.tipo);
+  if (tipo) {
+    formData.append("tipo", tipo);
+  }
 
-  formData.append("orden", String(payload.orden ?? 0));
+  const descripcionNormalizada = descripcion?.trim();
 
-  const descripcion = payload.descripcion?.trim();
+  if (descripcionNormalizada) {
+    formData.append("descripcion", descripcionNormalizada);
+  }
 
-  if (descripcion) {
-    formData.append("descripcion", descripcion);
+  if (typeof orden === "number") {
+    formData.append("orden", String(orden));
   }
 
   return formData;

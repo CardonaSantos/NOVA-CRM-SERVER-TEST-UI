@@ -165,6 +165,12 @@ export function useSolicitarAutorizacionDesinstalacion(
     },
   );
 }
+
+/**
+ * Conseguir las autorizaciones pendientes
+ * @param params
+ * @returns
+ */
 export function useGetAutorizacionesDesinstalacionPendientes(
   params: AutorizacionesPendientesQueryParams,
 ) {

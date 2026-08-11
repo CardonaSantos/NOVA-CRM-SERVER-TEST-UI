@@ -1,6 +1,5 @@
 import { useFormContext } from "react-hook-form";
-
-import { AppFormDatePicker } from "@/components/app/form";
+import { AppFormInput } from "@/components/app/form";
 import { AppGrid } from "@/components/app/primitives/app-grid";
 import { AppStack } from "@/components/app/primitives/app-stack";
 
@@ -41,17 +40,11 @@ export function InstalacionProgramacionSection({
           }}
           gap="sm"
         >
-          <AppFormDatePicker<InstalacionProgramacionFormFields>
+          <AppFormInput<InstalacionProgramacionFormFields>
             name="fechaProgramada"
             label="Fecha programada"
+            type="datetime-local"
           />
-
-          {showFechaInicio ? (
-            <AppFormDatePicker<InstalacionProgramacionFormFields>
-              name="fechaInicio"
-              label="Fecha de inicio"
-            />
-          ) : null}
         </AppGrid>
       </AppStack>
     </section>

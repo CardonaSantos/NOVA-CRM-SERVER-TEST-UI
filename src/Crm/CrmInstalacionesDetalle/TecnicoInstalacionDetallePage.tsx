@@ -122,7 +122,6 @@ export default function TecnicoInstalacionDetallePage() {
     <>
       <PageTransitionCrm
         titleHeader={`Instalación #${instalacionId}`}
-        // subtitle={`${summary.overdue}`}
         variant="fade-pure"
       >
         <AppDataState isFetching={detalleQuery.isFetching}>
