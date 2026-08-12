@@ -32,8 +32,10 @@ import {
 } from "../CrmHomologaciones/schema/schema";
 import { toCrearInstalacionPayload } from "./common/crear-instalaciones.mapper";
 import { useGetHomologacionesSelect } from "../CrmHooks/hooks/pppoe-homologaciones/pppoe-perfil-homologaciones";
+import { useNavigate } from "react-router-dom";
 
 function InstalacionesMainPage() {
+  const navigate = useNavigate();
   const empresaId = useStoreCrm((state) => state.empresaId) ?? 0;
 
   const { data: tecnicos = [], isLoading: isLoadingTecnicos } =
@@ -224,6 +226,8 @@ function InstalacionesMainPage() {
 
         success: (response) => {
           form.reset(CREAR_INSTALACION_DEFAULT_VALUES);
+
+          navigate(`/crm/instalacion/${response.instalacion.id}`);
 
           return response.prealtaPppoe.estado ===
             EstadoResultadoPrealtaPppoe.FALLIDA

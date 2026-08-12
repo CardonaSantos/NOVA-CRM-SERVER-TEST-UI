@@ -3,9 +3,9 @@ import { useMemo } from "react";
 import { AppCard } from "@/components/app/primitives/app-card";
 import { AppDataTable } from "@/components/app/table/app-data-table";
 import type { useAppTableHandlers } from "@/components/app/handlers";
-import { PerfilHomologacionListItem } from "@/Crm/features/pppoe-homologaciones/pppoe-homologaciones.types";
-import { createPerfilesTableColumns } from "./perfiles-table.columns";
 import { PerfilMobileCard } from "../cards/perfil-mobile-card";
+import { PerfilHomologacionListItem } from "@/Crm/features/pppoe-homologaciones/intefaces";
+import { createPerfilesTableColumns } from "./perfiles-table.columns";
 
 type TableController = ReturnType<typeof useAppTableHandlers>;
 

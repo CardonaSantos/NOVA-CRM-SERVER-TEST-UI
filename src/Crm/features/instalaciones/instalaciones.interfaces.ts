@@ -170,7 +170,7 @@ export type ClienteInstalacionBase = {
   tipo: TipoInstalacionCliente;
   estado: EstadoInstalacionCliente;
 
-  fechaProgramada: string | null;
+  fechaProgramada: string;
   fechaInicio: string | null;
   fechaFinalizacion: string | null;
   fechaCancelacion: string | null;
@@ -271,6 +271,9 @@ export type ClienteInstalacionDetalle = ClienteInstalacionBase & {
 };
 
 export type CrearClienteInstalacionResponse = {
+  instalacion: {
+    id: number;
+  };
   detalle: ClienteInstalacionDetalle;
   acceso: {
     accesoInternetId: number;

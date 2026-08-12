@@ -1,9 +1,7 @@
-import { AccountMinus } from "@/Crm/Icons/AccountMinus";
 import { AddMinus } from "@/Crm/Icons/AddMinus";
 import { AlertShield } from "@/Crm/Icons/AlertShield";
 import { CustomIconProps, NetworkChartFilled } from "@/Crm/Icons/ChartNetWork";
 import { ListAltCheckOutline } from "@/Crm/Icons/cheklist";
-import { IBMCloud } from "@/Crm/Icons/IbmCloud";
 import { MessageIcon } from "@/Crm/Icons/MessageIcon";
 import { MetaIcon } from "@/Crm/Icons/MetaIcon";
 import { TwotoneAppRegistration } from "@/Crm/Icons/TwotoneAppRegistration";
@@ -95,12 +93,6 @@ export const routesCrm_SuperAdmin = [
       },
 
       {
-        icon: BadgePlus,
-        label: "Registrar instalación",
-        href: "/crm/crear-instalacion",
-      },
-
-      {
         icon: NetworkChartFilled,
         label: "Perfiles Homologados",
         href: "/crm/pppoe/homologacion-perfiles",
@@ -139,12 +131,6 @@ export const routesCrm_SuperAdmin = [
         icon: ListAltCheckOutline,
         label: "Desinstalaciones registradas",
         href: "/crm/desinstalaciones",
-      },
-
-      {
-        icon: AccountMinus,
-        label: "Registrar desinstalación",
-        href: "/crm/crear-desinstalacion",
       },
 
       {

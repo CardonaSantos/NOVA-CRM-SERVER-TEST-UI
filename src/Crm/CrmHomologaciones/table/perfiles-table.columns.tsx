@@ -2,7 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Pencil, Power, PowerOff } from "lucide-react";
 import { AppBadge } from "@/components/app/primitives/app-badge";
 import { createAppRowActionsColumn } from "@/components/app/table/app-table-row-actions";
-import { PerfilHomologacionListItem } from "@/Crm/features/pppoe-homologaciones/pppoe-homologaciones.types";
+import { PerfilHomologacionListItem } from "@/Crm/features/pppoe-homologaciones/intefaces";
 
 interface CreatePerfilesTableColumnsParams {
   onEdit: (item: PerfilHomologacionListItem) => void;
@@ -18,10 +18,6 @@ function PlanCell({ item }: { item: PerfilHomologacionListItem }) {
       >
         {item.servicioInternet.nombre}
       </p>
-
-      <p className="truncate text-xs text-muted-foreground">
-        {item.servicioInternet.velocidad ?? "Sin velocidad"}
-      </p>
     </div>
   );
 }
@@ -34,13 +30,6 @@ function RouterCell({ item }: { item: PerfilHomologacionListItem }) {
         title={item.mikrotikRouter.nombre}
       >
         {item.mikrotikRouter.nombre}
-      </p>
-
-      <p
-        className="truncate font-mono text-xs text-muted-foreground"
-        title={`${item.mikrotikRouter.host}:${item.mikrotikRouter.sshPort}`}
-      >
-        {item.mikrotikRouter.host}:{item.mikrotikRouter.sshPort}
       </p>
     </div>
   );
@@ -82,7 +71,7 @@ export function createPerfilesTableColumns({
     {
       accessorKey: "servicioInternet.nombre",
       header: "Plan",
-      size: 360,
+      size: 90,
       minSize: 240,
       meta: {
         grow: true,
@@ -92,7 +81,7 @@ export function createPerfilesTableColumns({
     {
       accessorKey: "mikrotikRouter.nombre",
       header: "Router",
-      size: 280,
+      size: 90,
       minSize: 220,
       cell: ({ row }) => <RouterCell item={row.original} />,
     },

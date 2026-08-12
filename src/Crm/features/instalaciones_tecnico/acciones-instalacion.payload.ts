@@ -4,9 +4,9 @@ export interface ReprogramarInstalacionTecnicaPayload {
 }
 
 export interface IniciarInstalacionTecnicaPayload {
-  contrasenaActual: string;
+  // contrasenaActual: string;
   fechaInicio?: string;
-  activarServicio?: boolean;
+  // activarServicio?: boolean;
 }
 
 export interface CompletarInstalacionTecnicaPayload {

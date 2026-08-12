@@ -23,6 +23,7 @@ import {
 import { InstalacionDetailViewProps } from "../instalacion-detail.types";
 import { InstalacionEvidenceGallery } from "../details/instalacion-evidence";
 import { InstalacionEvidenciasUploadPage } from "../evidencia/payload-evidencias";
+import { formattFechaWithMinutes } from "@/utils/formattFechas";
 
 // import { InstalacionEvidenciasUploadPage } from "../../evidencia/payload-evidencias";
 // import { InstalacionEvidenceGallery } from "../instalacion-evidence";
@@ -181,15 +182,15 @@ export function InstalacionGeneralTab({
               <AppGrid cols={{ base: 2, lg: 3 }} gap="sm">
                 <DetailItem
                   label="Programada"
-                  value={formatBusinessDate(instalacion.fechaProgramada)}
+                  value={formattFechaWithMinutes(instalacion.fechaProgramada)}
                 />
                 <DetailItem
                   label="Inicio"
-                  value={formatBusinessDate(instalacion.fechaInicio)}
+                  value={formattFechaWithMinutes(instalacion.fechaInicio)}
                 />
                 <DetailItem
                   label="Finalización"
-                  value={formatBusinessDate(instalacion.fechaFinalizacion)}
+                  value={formattFechaWithMinutes(instalacion.fechaFinalizacion)}
                 />
                 <DetailItem
                   label="Cancelación"

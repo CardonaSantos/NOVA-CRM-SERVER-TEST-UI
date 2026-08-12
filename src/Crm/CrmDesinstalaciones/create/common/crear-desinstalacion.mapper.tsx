@@ -39,8 +39,10 @@ import {
 import { toCrearDesinstalacionPayload } from "../../common/crear-desinstalacion.mapper";
 import { DesinstalacionCreateForm } from "../form/desinstalacion-create-form";
 import { AppSelectOption } from "@/components/app/primitives/app-single-select";
+import { useNavigate } from "react-router-dom";
 
 function DesinstalacionCreatePage() {
+  const navigate = useNavigate();
   /**
    * CATÁLOGOS
    */
@@ -210,8 +212,10 @@ function DesinstalacionCreatePage() {
 
         error: (error) => getApiErrorMessageAxios(error),
 
-        success: () => {
+        success: (response) => {
           form.reset(CREAR_DESINSTALACION_DEFAULT_VALUES);
+
+          navigate(`/crm/desinstalacion/${response.id}`);
 
           return "Desinstalación registrada";
         },

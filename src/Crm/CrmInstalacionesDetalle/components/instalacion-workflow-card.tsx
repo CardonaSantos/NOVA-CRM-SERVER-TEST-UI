@@ -230,14 +230,6 @@ export const InstalacionWorkflowCard = memo(function InstalacionWorkflowCard({
           {SECONDARY_ACTIONS.map((action) => {
             const actionState = detalle.acciones[action];
 
-            /*
-             * No mostramos acciones que el backend
-             * considera completamente ajenas al
-             * estado actual.
-             *
-             * Si prefieres mostrarlas disabled,
-             * quitamos este filtro.
-             */
             if (!actionState) {
               return null;
             }

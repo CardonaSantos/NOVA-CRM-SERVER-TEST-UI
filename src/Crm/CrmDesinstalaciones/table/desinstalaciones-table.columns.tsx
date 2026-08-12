@@ -137,9 +137,7 @@ export function createDesinstalacionesTableColumns(
 ): ColumnDef<ClienteDesinstalacionListItem, any>[] {
   return [
     /*
-     * ======================================================
      * ID
-     * ======================================================
      */
     {
       accessorKey: "id",
@@ -165,9 +163,7 @@ export function createDesinstalacionesTableColumns(
     },
 
     /*
-     * ======================================================
      * CLIENTE
-     * ======================================================
      */
     {
       id: "cliente",
@@ -206,9 +202,7 @@ export function createDesinstalacionesTableColumns(
     },
 
     /*
-     * ======================================================
      * ESTADO
-     * ======================================================
      */
     {
       accessorKey: "estado",
@@ -236,9 +230,7 @@ export function createDesinstalacionesTableColumns(
     },
 
     /*
-     * ======================================================
      * AUTORIZACIÓN
-     * ======================================================
      */
     {
       id: "autorizacion",
@@ -276,9 +268,7 @@ export function createDesinstalacionesTableColumns(
     },
 
     /*
-     * ======================================================
      * FECHA PROGRAMADA
-     * ======================================================
      */
     {
       accessorKey: "fechaProgramada",
@@ -306,9 +296,7 @@ export function createDesinstalacionesTableColumns(
     },
 
     /*
-     * ======================================================
      * SERVICIO
-     * ======================================================
      */
     {
       id: "servicio",
@@ -346,9 +334,7 @@ export function createDesinstalacionesTableColumns(
     },
 
     /*
-     * ======================================================
      * PPPoE
-     * ======================================================
      */
     {
       id: "pppoe",
@@ -398,9 +384,7 @@ export function createDesinstalacionesTableColumns(
     },
 
     /*
-     * ======================================================
      * TÉCNICO RESPONSABLE
-     * ======================================================
      */
     {
       id: "tecnicoResponsable",
@@ -443,9 +427,7 @@ export function createDesinstalacionesTableColumns(
     },
 
     /*
-     * ======================================================
      * EVIDENCIAS
-     * ======================================================
      */
     {
       id: "evidencias",
@@ -470,9 +452,7 @@ export function createDesinstalacionesTableColumns(
     },
 
     /*
-     * ======================================================
      * ACCIONES
-     * ======================================================
      */
     createAppRowActionsColumn<ClienteDesinstalacionListItem>({
       header: "",
@@ -485,27 +465,15 @@ export function createDesinstalacionesTableColumns(
         const estadoAutorizacion =
           desinstalacion.ultimaAutorizacion?.estado ?? null;
 
-        const esFinalizada =
-          desinstalacion.estado === EstadoDesinstalacionCliente.COMPLETADA ||
-          desinstalacion.estado === EstadoDesinstalacionCliente.CANCELADA ||
-          desinstalacion.estado === EstadoDesinstalacionCliente.FALLIDA;
+        const estaCompletada =
+          desinstalacion.estado === EstadoDesinstalacionCliente.COMPLETADA;
 
-        /**
-         * Se puede solicitar cuando:
-         *
-         * - todavía no existe autorización;
-         * - la última fue RECHAZADA.
-         *
-         * No permitimos:
-         *
-         * - PENDIENTE;
-         * - APROBADA;
-         * - desinstalaciones finalizadas.
-         */
+        const tieneAutorizacionBloqueante =
+          estadoAutorizacion === EstadoAutorizacionDesinstalacion.PENDIENTE ||
+          estadoAutorizacion === EstadoAutorizacionDesinstalacion.APROBADA;
+
         const puedeSolicitarAutorizacion =
-          !esFinalizada &&
-          (estadoAutorizacion === null ||
-            estadoAutorizacion === EstadoAutorizacionDesinstalacion.RECHAZADA);
+          !estaCompletada && !tieneAutorizacionBloqueante;
 
         return [
           {

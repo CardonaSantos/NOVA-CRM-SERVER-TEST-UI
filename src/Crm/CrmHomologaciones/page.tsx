@@ -1,16 +1,23 @@
 import { useMemo, useState } from "react";
+import { Plus } from "lucide-react";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
+
 import { toast } from "sonner";
+
 import { PageTransitionCrm } from "@/components/Layout/page-transition";
+
 import {
-  useAppConfirmHandler,
+  useAppDisclosure,
   useAppStateHandlers,
   useAppTableHandlers,
 } from "@/components/app/handlers";
-import { AppCard } from "@/components/app/primitives/app-card";
+
+import { AppButton } from "@/components/app/primitives/app-button";
 import { AppConfirmDialog } from "@/components/app/primitives/app-confirm-dialog";
 import { AppContainer } from "@/components/app/primitives/app-container";
+
 import {
   AppDialog,
   AppDialogBody,
@@ -19,38 +26,47 @@ import {
   AppDialogHeader,
   AppDialogTitle,
 } from "@/components/app/primitives/app-dialog";
-import { AppStack } from "@/components/app/primitives/app-stack";
+
 import { AppForm, AppFormInput, AppFormSubmit } from "@/components/app/form";
+
 import { AppInline } from "@/components/app/primitives/app-inline";
+import { AppStack } from "@/components/app/primitives/app-stack";
+
 import { useStoreCrm } from "@/Crm/ZustandCrm/ZustandCrmContext";
+
 import { useGetMikroTiks } from "@/Crm/CrmHooks/hooks/Mikrotik/useGetMikroTik";
 import { useGetServiciosWifi } from "@/Crm/CrmHooks/hooks/ServiciosWfi/useGetServiciosWifi";
-import { getApiErrorMessageAxios } from "@/utils/getApiAxiosMessage";
-import {
-  PerfilHomologacionFilters,
-  PerfilHomologacionListItem,
-} from "../features/pppoe-homologaciones/intefaces";
 
-import {
-  ActualizarCodigoPerfilFormValues,
-  actualizarCodigoPerfilSchema,
-  CREAR_PERFIL_HOMOLOGACION_DEFAULTS,
-  CrearPerfilHomologacionFormValues,
-  crearPerfilHomologacionSchema,
-} from "./schema/schema";
-import { PerfilHomologacionForm } from "./form/perfil-homologacion-form";
-import { PerfilesFilters } from "./filters/perfiles-filters";
-import { PerfilesTable } from "./table/perfiles-table";
-import {
-  toActualizarCodigoPerfilPayload,
-  toCrearPerfilHomologacionPayload,
-} from "./common/mapper";
 import {
   useActualizarCodigoPerfil,
   useCambiarEstadoPerfil,
   useCrearPerfilHomologacion,
   usePerfilesHomologacion,
 } from "@/Crm/CrmHooks/hooks/pppoe-homologaciones/pppoe-perfil-homologaciones";
+
+import { getApiErrorMessageAxios } from "@/utils/getApiAxiosMessage";
+
+import type {
+  PerfilHomologacionFilters,
+  PerfilHomologacionListItem,
+} from "../features/pppoe-homologaciones/intefaces";
+
+import {
+  type ActualizarCodigoPerfilFormValues,
+  actualizarCodigoPerfilSchema,
+  CREAR_PERFIL_HOMOLOGACION_DEFAULTS,
+  type CrearPerfilHomologacionFormValues,
+  crearPerfilHomologacionSchema,
+} from "./schema/schema";
+
+import { PerfilHomologacionForm } from "./form/perfil-homologacion-form";
+import { PerfilesFilters } from "./filters/perfiles-filters";
+import { PerfilesTable } from "./table/perfiles-table";
+
+import {
+  toActualizarCodigoPerfilPayload,
+  toCrearPerfilHomologacionPayload,
+} from "./common/mapper";
 
 const FILTER_DEFAULTS: PerfilHomologacionFilters = {
   activo: null,
@@ -60,22 +76,32 @@ const FILTER_DEFAULTS: PerfilHomologacionFilters = {
 
 export default function PerfilesHomologacionPage() {
   const empresaId = useStoreCrm((state) => state.empresaId) ?? 0;
+
   const userId = useStoreCrm((state) => state.userIdCRM) ?? 0;
+
   const [editing, setEditing] = useState<PerfilHomologacionListItem | null>(
     null,
   );
+
   const [statusTarget, setStatusTarget] =
     useState<PerfilHomologacionListItem | null>(null);
+
+  const createDialog = useAppDisclosure();
 
   const table = useAppTableHandlers({
     initialPageSize: 10,
     initialDensity: "xs",
     resetPageOnSearch: true,
   });
+
   const filters =
     useAppStateHandlers<PerfilHomologacionFilters>(FILTER_DEFAULTS);
 
+  /*
+   * Opciones
+   */
   const routersQuery = useGetMikroTiks();
+
   const serviciosQuery = useGetServiciosWifi();
 
   const routerOptions = useMemo(
@@ -84,14 +110,17 @@ export default function PerfilesHomologacionPage() {
         .filter((router) => router.empresaId === empresaId && router.activo)
         .map((router) => ({
           value: router.id,
+
           label: `${router.nombre} · ${router.host}`,
         })),
     [empresaId, routersQuery.data],
   );
+
   const servicioOptions = useMemo(
     () =>
       (serviciosQuery.data ?? []).map((servicio) => ({
         value: servicio.id,
+
         label: servicio.velocidad
           ? `${servicio.nombre} · ${servicio.velocidad}`
           : servicio.nombre,
@@ -99,22 +128,59 @@ export default function PerfilesHomologacionPage() {
     [serviciosQuery.data],
   );
 
+  /*
+   * Formularios
+   */
+  const createForm = useForm<CrearPerfilHomologacionFormValues>({
+    resolver: zodResolver(crearPerfilHomologacionSchema),
+
+    defaultValues: CREAR_PERFIL_HOMOLOGACION_DEFAULTS,
+
+    mode: "onChange",
+  });
+
+  const editForm = useForm<ActualizarCodigoPerfilFormValues>({
+    resolver: zodResolver(actualizarCodigoPerfilSchema),
+
+    defaultValues: {
+      codigoPerfil: "",
+    },
+
+    mode: "onChange",
+  });
+
+  /*
+   * Query params
+   */
   const queryParams = useMemo(
     () => ({
       page: table.pagination.pageIndex + 1,
+
       limit: table.pagination.pageSize,
+
       ...(table.serverSearch.trim()
-        ? { search: table.serverSearch.trim() }
+        ? {
+            search: table.serverSearch.trim(),
+          }
         : {}),
+
       ...(filters.state.activo === null
         ? {}
-        : { activo: filters.state.activo }),
+        : {
+            activo: filters.state.activo,
+          }),
+
       ...(filters.state.mikrotikRouterId === null
         ? {}
-        : { mikrotikRouterId: filters.state.mikrotikRouterId }),
+        : {
+            mikrotikRouterId: filters.state.mikrotikRouterId,
+          }),
+
       ...(filters.state.servicioInternetId === null
         ? {}
-        : { servicioInternetId: filters.state.servicioInternetId }),
+        : {
+            servicioInternetId: filters.state.servicioInternetId,
+          }),
     }),
     [
       filters.state,
@@ -124,93 +190,178 @@ export default function PerfilesHomologacionPage() {
     ],
   );
 
+  /*
+   * Queries / mutations
+   */
   const perfilesQuery = usePerfilesHomologacion(queryParams, empresaId > 0);
+
   const createMutation = useCrearPerfilHomologacion();
+
   const updateMutation = useActualizarCodigoPerfil(editing?.id ?? null);
+
   const statusMutation = useCambiarEstadoPerfil(
     statusTarget?.id ?? null,
+
     statusTarget?.activo ? "desactivar" : "activar",
   );
 
-  const createForm = useForm<CrearPerfilHomologacionFormValues>({
-    resolver: zodResolver(crearPerfilHomologacionSchema),
-    defaultValues: CREAR_PERFIL_HOMOLOGACION_DEFAULTS,
-    mode: "onChange",
-  });
-  const editForm = useForm<ActualizarCodigoPerfilFormValues>({
-    resolver: zodResolver(actualizarCodigoPerfilSchema),
-    defaultValues: { codigoPerfil: "" },
-    mode: "onChange",
-  });
+  /*
+   * Crear
+   */
+  const openCreate = () => {
+    createForm.reset(CREAR_PERFIL_HOMOLOGACION_DEFAULTS);
 
-  const createConfirm =
-    useAppConfirmHandler<CrearPerfilHomologacionFormValues>();
-  const editConfirm = useAppConfirmHandler<ActualizarCodigoPerfilFormValues>();
+    createDialog.open();
+  };
 
-  const onCreateSubmit: SubmitHandler<CrearPerfilHomologacionFormValues> = (
-    values,
-  ) => createConfirm.open(values);
+  const handleCreateDialogOpenChange = (open: boolean) => {
+    if (createMutation.isPending && !open) {
+      return;
+    }
 
-  const handleCreate = () =>
-    createConfirm.confirm(async (values) => {
+    createDialog.setOpen(open);
+
+    if (!open) {
+      createForm.reset(CREAR_PERFIL_HOMOLOGACION_DEFAULTS);
+    }
+  };
+
+  const onCreateSubmit: SubmitHandler<
+    CrearPerfilHomologacionFormValues
+  > = async (values) => {
+    try {
       await toast.promise(
         createMutation.mutateAsync(toCrearPerfilHomologacionPayload(values)),
         {
           loading: "Registrando homologación...",
+
           success: "Homologación registrada",
+
           error: (error) => getApiErrorMessageAxios(error),
         },
       );
 
       createForm.reset(CREAR_PERFIL_HOMOLOGACION_DEFAULTS);
-    });
 
-  const openEdit = (item: PerfilHomologacionListItem) => {
-    setEditing(item);
-    editForm.reset({ codigoPerfil: item.codigoPerfil });
+      createDialog.setOpen(false);
+    } catch {
+      /*
+       * El mutation/toast ya presenta
+       * el error. Dejamos abierto el
+       * formulario para corregirlo.
+       */
+    }
   };
 
-  const handleEdit = () =>
-    editConfirm.confirm(async (values) => {
+  /*
+   * Editar
+   */
+  const openEdit = (item: PerfilHomologacionListItem) => {
+    setEditing(item);
+
+    editForm.reset({
+      codigoPerfil: item.codigoPerfil,
+    });
+  };
+
+  const handleEditDialogOpenChange = (open: boolean) => {
+    if (updateMutation.isPending && !open) {
+      return;
+    }
+
+    if (!open) {
+      setEditing(null);
+
+      editForm.reset({
+        codigoPerfil: "",
+      });
+    }
+  };
+
+  const onEditSubmit: SubmitHandler<ActualizarCodigoPerfilFormValues> = async (
+    values,
+  ) => {
+    if (!editing) {
+      return;
+    }
+
+    try {
       await toast.promise(
         updateMutation.mutateAsync(toActualizarCodigoPerfilPayload(values)),
         {
           loading: "Actualizando código...",
+
           success: "Código actualizado",
+
           error: (error) => getApiErrorMessageAxios(error),
         },
       );
 
       setEditing(null);
-    });
 
-  const handleStatusChange = async () => {
-    if (!statusTarget) return;
-    await toast.promise(
-      statusMutation.mutateAsync({ actualizadoPorId: userId }),
-      {
-        loading: statusTarget.activo ? "Desactivando..." : "Activando...",
-        success: statusTarget.activo
-          ? "Homologación desactivada"
-          : "Homologación activada",
-        error: (error) => getApiErrorMessageAxios(error),
-      },
-    );
-    setStatusTarget(null);
+      editForm.reset({
+        codigoPerfil: "",
+      });
+    } catch {
+      /*
+       * Mantener el modal abierto.
+       */
+    }
   };
 
+  /*
+   * Estado
+   */
+  const handleStatusChange = async () => {
+    if (!statusTarget) {
+      return;
+    }
+
+    try {
+      await toast.promise(
+        statusMutation.mutateAsync({
+          actualizadoPorId: userId,
+        }),
+        {
+          loading: statusTarget.activo ? "Desactivando..." : "Activando...",
+
+          success: statusTarget.activo
+            ? "Homologación desactivada"
+            : "Homologación activada",
+
+          error: (error) => getApiErrorMessageAxios(error),
+        },
+      );
+
+      setStatusTarget(null);
+    } catch {
+      /*
+       * El confirm permanece abierto
+       * para que el usuario pueda
+       * reintentar o cerrarlo.
+       */
+    }
+  };
+
+  /*
+   * Filtros
+   */
   const changeFilter = <K extends keyof PerfilHomologacionFilters>(
     key: K,
     value: PerfilHomologacionFilters[K],
   ) => {
     filters.setField(key, value);
+
     table.resetPage();
   };
 
   const clearFilters = () => {
     filters.reset(FILTER_DEFAULTS);
+
     table.handleSearchChange("");
+
     table.handleDebouncedSearch("");
+
     table.resetPage();
   };
 
@@ -222,23 +373,17 @@ export default function PerfilesHomologacionPage() {
     <PageTransitionCrm titleHeader="Homologación de planes" variant="fade-pure">
       <AppContainer size="xl" paddingX="sm" paddingY="sm">
         <AppStack gap="md">
-          <AppCard
-            size="xs"
-            variant="outline"
-            title="Nueva homologación"
-            description="Relaciona un plan comercial con el perfil real del router."
-          >
-            <PerfilHomologacionForm
-              form={createForm}
-              routerOptions={routerOptions}
-              servicioOptions={servicioOptions}
-              isLoadingOptions={
-                routersQuery.isLoading || serviciosQuery.isLoading
-              }
-              onSubmit={onCreateSubmit}
-            />
-          </AppCard>
-
+          <AppInline justify="end" align="center" fullWidth>
+            <AppButton
+              type="button"
+              size="sm"
+              variant="primary"
+              leftIcon={<Plus size={15} aria-hidden="true" />}
+              onClick={openCreate}
+            >
+              Nueva homologación
+            </AppButton>
+          </AppInline>
           <PerfilesFilters
             search={table.search}
             filters={filters.state}
@@ -251,7 +396,6 @@ export default function PerfilesHomologacionPage() {
             onFilterChange={changeFilter}
             onClear={clearFilters}
           />
-
           <PerfilesTable
             items={perfilesQuery.data?.data ?? []}
             totalRows={perfilesQuery.data?.meta.total ?? 0}
@@ -265,45 +409,78 @@ export default function PerfilesHomologacionPage() {
           />
         </AppStack>
 
-        <AppConfirmDialog
-          open={createConfirm.isOpen}
-          onOpenChange={createConfirm.setOpen}
-          preset="warning"
-          title="Registrar homologación"
-          description="El plan quedará asociado al código de perfil indicado para este router. ¿Desea continuar?"
-          confirmText="Registrar"
-          loadingText="Registrando..."
-          isLoading={createMutation.isPending}
-          onConfirm={handleCreate}
-        />
-
+        {/* Crear */}
         <AppDialog
-          open={Boolean(editing)}
-          onOpenChange={(open) => !open && setEditing(null)}
+          open={createDialog.isOpen}
+          onOpenChange={handleCreateDialogOpenChange}
         >
-          <AppDialogContent size="sm">
+          <AppDialogContent size="md" viewport="compact">
             <AppDialogHeader>
-              <AppDialogTitle>Editar código del perfil</AppDialogTitle>
+              <AppDialogTitle>Nueva homologación</AppDialogTitle>
+
               <AppDialogDescription>
-                Solo se modifica el código real configurado en MikroTik.
+                Relacione un plan comercial con el perfil configurado en
+                MikroTik.
               </AppDialogDescription>
             </AppDialogHeader>
+
             <AppDialogBody>
-              <AppForm
-                form={editForm}
-                onSubmit={(values) => editConfirm.open(values)}
-              >
+              <PerfilHomologacionForm
+                form={createForm}
+                routerOptions={routerOptions}
+                servicioOptions={servicioOptions}
+                isLoadingOptions={
+                  routersQuery.isLoading || serviciosQuery.isLoading
+                }
+                isPending={createMutation.isPending}
+                onCancel={() => handleCreateDialogOpenChange(false)}
+                onSubmit={onCreateSubmit}
+              />
+            </AppDialogBody>
+          </AppDialogContent>
+        </AppDialog>
+
+        {/* Editar código */}
+        <AppDialog
+          open={Boolean(editing)}
+          onOpenChange={handleEditDialogOpenChange}
+        >
+          <AppDialogContent size="sm" viewport="compact">
+            <AppDialogHeader>
+              <AppDialogTitle>Editar código del perfil</AppDialogTitle>
+
+              <AppDialogDescription>
+                Modifique únicamente el código del perfil configurado en
+                MikroTik.
+              </AppDialogDescription>
+            </AppDialogHeader>
+
+            <AppDialogBody>
+              <AppForm form={editForm} onSubmit={onEditSubmit}>
                 <AppStack gap="sm">
                   <AppFormInput<ActualizarCodigoPerfilFormValues>
                     name="codigoPerfil"
                     label="Código del perfil"
+                    placeholder="Ej. PLAN_20M"
                     maxLength={100}
                     autoComplete="off"
                     required
                   />
-                  <AppInline justify="end" fullWidth>
+
+                  <AppInline justify="end" gap="xs" fullWidth>
+                    <AppButton
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={updateMutation.isPending}
+                      onClick={() => handleEditDialogOpenChange(false)}
+                    >
+                      Cancelar
+                    </AppButton>
+
                     <AppFormSubmit<ActualizarCodigoPerfilFormValues>
                       size="sm"
+                      loadingText="Guardando..."
                       disableWhenInvalid
                     >
                       Guardar cambio
@@ -315,21 +492,18 @@ export default function PerfilesHomologacionPage() {
           </AppDialogContent>
         </AppDialog>
 
-        <AppConfirmDialog
-          open={editConfirm.isOpen}
-          onOpenChange={editConfirm.setOpen}
-          preset="warning"
-          title="Actualizar código"
-          description="Las nuevas altas usarán este código de perfil. ¿Desea guardar el cambio?"
-          confirmText="Actualizar"
-          loadingText="Actualizando..."
-          isLoading={updateMutation.isPending}
-          onConfirm={handleEdit}
-        />
-
+        {/* Activar / desactivar */}
         <AppConfirmDialog
           open={Boolean(statusTarget)}
-          onOpenChange={(open) => !open && setStatusTarget(null)}
+          onOpenChange={(open) => {
+            if (statusMutation.isPending && !open) {
+              return;
+            }
+
+            if (!open) {
+              setStatusTarget(null);
+            }
+          }}
           preset={statusTarget?.activo ? "delete" : "warning"}
           title={
             statusTarget?.activo
@@ -342,6 +516,9 @@ export default function PerfilesHomologacionPage() {
               : "La homologación volverá a estar disponible para nuevas prealtas PPPoE."
           }
           confirmText={statusTarget?.activo ? "Desactivar" : "Activar"}
+          loadingText={
+            statusTarget?.activo ? "Desactivando..." : "Activando..."
+          }
           isLoading={statusMutation.isPending}
           onConfirm={handleStatusChange}
         />

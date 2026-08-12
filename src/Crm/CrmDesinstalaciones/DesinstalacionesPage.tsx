@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import {
   useAppDisclosure,
@@ -30,6 +30,8 @@ import { DesinstalacionesTable } from "./table/desinstalaciones-table";
 import { PaginationMeta } from "../features/instalaciones/instalaciones.interfaces";
 import { DesinstalacionesListFilters } from "./filttros";
 import { SolicitarAutorizacionDesinstalacionDialog } from "./actions/solicitar-autorizacion-desinstalacion-dialog";
+import { AppInline } from "@/components/app/primitives/app-inline";
+import { AppButton } from "@/components/app/primitives/app-button";
 
 const EMPTY_ITEMS: ClienteDesinstalacionListItem[] = [];
 
@@ -215,6 +217,12 @@ function DesinstalacionesListPage() {
     <PageTransitionCrm titleHeader="Desinstalaciones" variant="fade-pure">
       <AppContainer size="full" paddingX="none" paddingY="none">
         <AppStack gap="sm">
+          <AppInline justify="end" fullWidth>
+            <AppButton asChild>
+              <Link to="/crm/crear-desinstalacion">Nueva desinstalacion</Link>
+            </AppButton>
+          </AppInline>
+
           <DesinstalacionesListFilters
             search={table.search}
             filters={filters.state}

@@ -1,10 +1,9 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   useAppStateHandlers,
   useAppTableHandlers,
 } from "@/components/app/handlers";
-
 import { AppContainer } from "@/components/app/primitives/app-container";
 import { AppStack } from "@/components/app/primitives/app-stack";
 import { useStoreCrm } from "@/Crm/ZustandCrm/ZustandCrmContext";
@@ -13,13 +12,11 @@ import type {
   ClienteInstalacionListItem,
   PaginationMeta,
 } from "@/Crm/features/instalaciones/instalaciones.interfaces";
-
 import {
   INSTALACIONES_LIST_FILTERS_DEFAULT,
   type InstalacionesListFiltersState,
   toInstalacionesQueryParams,
 } from "../filters/instalaciones-list.filters";
-import { InstalacionesMetrics } from "../metrics/metricas";
 import { InstalacionesListFilters } from "../filters/instalaciones-list-filters";
 import { INSTALACIONES_ROUTES } from "../filters/routes";
 import { InstalacionesTable } from "./instalaciones-tabla";
@@ -27,6 +24,8 @@ import { createInstalacionesTableColumns } from "./instalaciones-table.columns";
 import { PageTransitionCrm } from "@/components/Layout/page-transition";
 import { useGetUsersToSelect } from "@/Crm/CrmHooks/hooks/useUsuarios/use-usuers";
 import { useGetServiciosWifi } from "@/Crm/CrmHooks/hooks/ServiciosWfi/useGetServiciosWifi";
+import { AppButton } from "@/components/app/primitives/app-button";
+import { AppInline } from "@/components/app/primitives/app-inline";
 
 const EMPTY_ITEMS: ClienteInstalacionListItem[] = [];
 
@@ -157,7 +156,11 @@ function InstalacionesListPage() {
     <PageTransitionCrm titleHeader="Instalaciones" variant="fade-pure">
       <AppContainer size="xl" paddingX="sm" paddingY="sm">
         <AppStack gap="md">
-          <InstalacionesMetrics items={items} meta={meta} />
+          <AppInline justify="end" fullWidth>
+            <AppButton asChild>
+              <Link to="/crm/crear-instalacion">Nueva instalación</Link>
+            </AppButton>
+          </AppInline>
 
           <InstalacionesListFilters
             search={table.search}

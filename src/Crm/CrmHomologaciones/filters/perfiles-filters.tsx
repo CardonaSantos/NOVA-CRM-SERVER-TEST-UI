@@ -33,17 +33,29 @@ const ESTADO_OPTIONS = [
 export function PerfilesFilters(props: PerfilesFiltersProps) {
   return (
     <AppCard size="xs" variant="outline" className="p-2">
-      <AppGrid cols={{ base: 1, md: 2, xl: 4 }} gap="sm">
-        <AppSearchInput
-          value={props.search}
-          onValueChange={props.onSearchChange}
-          onDebouncedChange={props.onDebouncedSearchChange}
-          debounceMs={400}
-          placeholder="Buscar plan, código, router o host"
-          aria-label="Buscar homologaciones"
-          isSearching={props.isSearching}
-          clearable
-        />
+      <AppGrid
+        cols={{
+          base: 1,
+          md: 2,
+          xl: 4,
+        }}
+        gap="sm"
+      >
+        <AppField label="Buscar">
+          {(field) => (
+            <AppSearchInput
+              id={field.id}
+              value={props.search}
+              onValueChange={props.onSearchChange}
+              onDebouncedChange={props.onDebouncedSearchChange}
+              debounceMs={400}
+              placeholder="Buscar plan, código, router o host"
+              aria-label="Buscar homologaciones"
+              isSearching={props.isSearching}
+              clearable
+            />
+          )}
+        </AppField>
 
         <AppField label="Estado">
           {(field) => (
