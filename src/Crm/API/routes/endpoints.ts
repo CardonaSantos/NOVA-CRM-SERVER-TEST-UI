@@ -174,4 +174,30 @@ export const crm_endpoints = {
     get_auditoria_instalacion: (instalacionId: number) =>
       `/cliente-instalaciones/${instalacionId}/auditoria-pppoe`,
   },
+
+  // TICKET- CONFORMIDAD
+  ticket_conformidad: {
+    crearPorTicket: (ticketId: number) =>
+      `ticket-soporte-conformidad/tickets/${ticketId}`,
+
+    generarEnlace: (conformidadId: number) =>
+      `ticket-soporte-conformidad/${conformidadId}/enlaces`,
+
+    detalle: (conformidadId: number) =>
+      `ticket-soporte-conformidad/${conformidadId}`,
+
+    actualPorTicket: (ticketId: number) =>
+      `ticket-soporte-conformidad/tickets/${ticketId}/actual`,
+
+    public: {
+      detalle: (token: string) =>
+        `ticket-soporte-conformidad/public/${encodeURIComponent(token)}`,
+
+      retrabajo: (token: string) =>
+        `ticket-soporte-conformidad/public/${encodeURIComponent(token)}/retrabajo`,
+
+      firma: (token: string) =>
+        `ticket-soporte-conformidad/public/${encodeURIComponent(token)}/firma`,
+    },
+  },
 } as const;

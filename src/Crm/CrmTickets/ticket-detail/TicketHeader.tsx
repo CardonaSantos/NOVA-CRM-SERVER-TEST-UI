@@ -2,6 +2,7 @@
 
 import {
   Ellipsis,
+  FileSignature,
   FileText,
   Pin,
   RotateCcw,
@@ -34,6 +35,8 @@ interface TicketHeaderProps {
   onEdit: () => void;
   onDelete: () => void;
   onCloseTicket: () => void;
+
+  onConformidad: () => void;
 }
 
 const menuItemClassName =
@@ -53,6 +56,7 @@ export function TicketHeader({
   onEdit,
   onDelete,
   onCloseTicket,
+  onConformidad,
 }: TicketHeaderProps) {
   const customerName = ticket.customer?.name ?? null;
   const customerId = ticket.customer?.id ?? null;
@@ -146,6 +150,14 @@ export function TicketHeader({
               >
                 <span>Editar</span>
                 <RotateCcw size={12} />
+              </AppDropdownMenuItem>
+
+              <AppDropdownMenuItem
+                className={menuItemClassName}
+                onSelect={() => deferTicketDetailAction(onConformidad)}
+              >
+                <span>Conformidad</span>
+                <FileSignature size={12} />
               </AppDropdownMenuItem>
 
               <AppDropdownMenuItem

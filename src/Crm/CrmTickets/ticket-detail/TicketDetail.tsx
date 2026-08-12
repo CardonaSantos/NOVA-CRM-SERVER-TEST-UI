@@ -61,6 +61,8 @@ export default function TicketDetail({
   soluciones,
   query,
 }: TicketDetailProps) {
+  const conformidadDialog = useAppDisclosure();
+
   const userId = useStoreCrm((state) => state.userIdCRM) ?? 0;
   const queryClient = useQueryClient();
 
@@ -325,6 +327,7 @@ export default function TicketDetail({
         onEdit={handleOpenEdit}
         onDelete={deleteDialog.open}
         onCloseTicket={handleOpenCloseTicket}
+        onConformidad={conformidadDialog.open}
       />
 
       <TicketTimeline
@@ -371,6 +374,14 @@ export default function TicketDetail({
         form={formCloseTicket}
         onOpenChange={closeDialog.setOpen}
         onSubmit={handleCloseTicket}
+      />
+
+      <TicketConformidadDialog
+        open={conformidadDialog.isOpen}
+        onOpenChange={conformidadDialog.setOpen}
+        ticketId={ticket.id}
+        clienteNombre={ticket.customer?.name ?? null}
+        tecnicoNombre={ticket.assignee?.name ?? null}
       />
     </AppStack>
   );
