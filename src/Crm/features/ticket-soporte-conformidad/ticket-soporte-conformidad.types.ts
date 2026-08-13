@@ -429,17 +429,6 @@ export interface TicketConformidadGeneratedLink {
   canal: TicketConformidadCanal;
 }
 
-export interface GenerarEnlaceTicketConformidadResponse {
-  enlaceId: number;
-  conformidadId: number;
-
-  canal: TicketConformidadCanal;
-
-  url: string;
-
-  expiraEn: string;
-}
-
 export interface GenerarEnlaceTicketConformidadPayload {
   canal: TicketConformidadCanal;
   telefonoDestino?: string | null;

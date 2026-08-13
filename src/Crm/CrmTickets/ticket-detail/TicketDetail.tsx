@@ -39,6 +39,7 @@ import {
   buildUpdateTicketPayload,
   safeFormatTicketDate,
 } from "../_components/ticket-detail.helpers";
+import { TicketConformidadDialog } from "./conformidad/TicketConformidadDialog";
 
 interface TicketDetailProps {
   ticket: Ticket;
@@ -61,14 +62,13 @@ export default function TicketDetail({
   soluciones,
   query,
 }: TicketDetailProps) {
-  const conformidadDialog = useAppDisclosure();
-
   const userId = useStoreCrm((state) => state.userIdCRM) ?? 0;
   const queryClient = useQueryClient();
 
   const editDialog = useAppDisclosure();
   const deleteDialog = useAppDisclosure();
   const closeDialog = useAppDisclosure();
+  const conformidadDialog = useAppDisclosure();
 
   const ticketEdit = useAppStateHandlers<Ticket>(ticket);
 
@@ -380,8 +380,6 @@ export default function TicketDetail({
         open={conformidadDialog.isOpen}
         onOpenChange={conformidadDialog.setOpen}
         ticketId={ticket.id}
-        clienteNombre={ticket.customer?.name ?? null}
-        tecnicoNombre={ticket.assignee?.name ?? null}
       />
     </AppStack>
   );

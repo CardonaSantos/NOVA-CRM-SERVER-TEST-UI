@@ -117,7 +117,7 @@ export function TicketConformidadLinkResult({
         </AppAlert>
       )}
 
-      <AppCard variant="outline" size="sm" radius="md">
+      <AppCard variant="outline" size="sm" radius="md" className="p-2">
         <AppStack gap="sm">
           <AppInline align="center" gap="xs">
             <Link2 size={16} />
@@ -163,7 +163,7 @@ export function TicketConformidadLinkResult({
             {onRegenerate ? (
               <AppButton
                 type="button"
-                variant="ghost"
+                variant="danger"
                 size="sm"
                 leftIcon={<RefreshCw size={14} />}
                 loading={regenerating}

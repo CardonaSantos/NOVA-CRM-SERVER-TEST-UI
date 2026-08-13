@@ -65,3 +65,15 @@ export function getFirmaCliente(conformidad: TicketConformidadDetalle) {
     ) ?? null
   );
 }
+
+// constructor de enlace
+export function buildPublicConformidadUrl(token: string): string {
+  const configuredBase = import.meta.env.VITE_PUBLIC_APP_URL?.trim();
+
+  const baseUrl = (configuredBase || window.location.origin).replace(
+    /\/+$/,
+    "",
+  );
+
+  return `${baseUrl}/conformidad/${encodeURIComponent(token)}`;
+}

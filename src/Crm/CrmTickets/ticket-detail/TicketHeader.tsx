@@ -6,6 +6,7 @@ import {
   FileText,
   Pin,
   RotateCcw,
+  Signature,
   Sticker,
   TicketSlash,
   X,
@@ -31,9 +32,13 @@ import { getTicketPriorityTone } from "../_components/ticket-list.helpers";
 
 interface TicketHeaderProps {
   ticket: Ticket;
+
   onCloseView: () => void;
+
   onEdit: () => void;
+
   onDelete: () => void;
+
   onCloseTicket: () => void;
 
   onConformidad: () => void;
@@ -157,7 +162,8 @@ export function TicketHeader({
                 onSelect={() => deferTicketDetailAction(onConformidad)}
               >
                 <span>Conformidad</span>
-                <FileSignature size={12} />
+
+                <Signature size={12} />
               </AppDropdownMenuItem>
 
               <AppDropdownMenuItem

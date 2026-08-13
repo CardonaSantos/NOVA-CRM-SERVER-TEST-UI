@@ -9,7 +9,6 @@ import {
   AppDialog,
   AppDialogBody,
   AppDialogContent,
-  AppDialogDescription,
   AppDialogFooter,
   AppDialogHeader,
   AppDialogTitle,
@@ -19,6 +18,7 @@ import { AppStack } from "@/components/app/primitives/app-stack";
 import { AppDataState } from "@/components/app/primitives/app-data-state";
 import { getApiErrorMessageAxios } from "@/utils/getApiAxiosMessage";
 import {
+  buildPublicConformidadUrl,
   getConformidadDialogState,
   getFirmaCliente,
   getUltimoEnlace,
@@ -35,6 +35,7 @@ import {
   TicketConformidadCanal,
   TicketConformidadDialogState,
 } from "@/Crm/features/ticket-soporte-conformidad/enums";
+import { formattFechaWithMinutes } from "@/utils/formattFechas";
 
 interface TicketConformidadDialogProps {
   open: boolean;
@@ -49,6 +50,38 @@ type GeneratedLinkState = {
 
   expiraEn: string;
 };
+
+interface NoneStateProps {
+  busy: boolean;
+
+  onGenerate: () => void;
+}
+
+interface RetrabajoStateProps {
+  busy: boolean;
+
+  onGenerate: () => void;
+}
+
+interface PendingStateProps {
+  generatedLink: GeneratedLinkState | null;
+
+  ultimoEnlaceExpiraEn: string | null;
+
+  busy: boolean;
+
+  onGenerate: () => void;
+
+  onRegenerate: () => void;
+}
+
+interface ConformeStateProps {
+  nombre: string | null;
+
+  telefono: string | null;
+
+  firmadoEn: string | null;
+}
 
 export function TicketConformidadDialog({
   open,
@@ -109,7 +142,7 @@ export function TicketConformidadDialog({
   const storeGeneratedLink = useCallback(
     (response: GenerarEnlaceTicketConformidadResponse) => {
       setGeneratedLink({
-        url: response.url,
+        url: buildPublicConformidadUrl(response.token),
         expiraEn: response.expiraEn,
       });
     },
@@ -181,7 +214,10 @@ export function TicketConformidadDialog({
      * Luego el useEffect generará el enlace
      * cuando aparezca conformidadId.
      */
-    if (state === TicketConformidadDialogState.NONE) {
+    if (
+      state === TicketConformidadDialogState.NONE ||
+      state === TicketConformidadDialogState.REQUIERE_RETRABAJO
+    ) {
       try {
         setGenerateAfterCreate(true);
 
@@ -226,11 +262,6 @@ export function TicketConformidadDialog({
       <AppDialogContent size="lg">
         <AppDialogHeader>
           <AppDialogTitle>Conformidad del cliente</AppDialogTitle>
-
-          <AppDialogDescription>
-            Administra la solicitud de conformidad correspondiente al ticket #
-            {ticketId}.
-          </AppDialogDescription>
         </AppDialogHeader>
 
         <AppDialogBody>
@@ -273,7 +304,10 @@ export function TicketConformidadDialog({
               ) : null}
 
               {state === TicketConformidadDialogState.REQUIERE_RETRABAJO ? (
-                <RetrabajoState />
+                <RetrabajoState
+                  busy={isBusy}
+                  onGenerate={() => void handleGenerateLink()}
+                />
               ) : null}
             </AppStack>
           </AppDataState>
@@ -298,12 +332,6 @@ export function TicketConformidadDialog({
  * ESTADOS
  * ======================================================= */
 
-interface NoneStateProps {
-  busy: boolean;
-
-  onGenerate: () => void;
-}
-
 function NoneState({ busy, onGenerate }: NoneStateProps) {
   return (
     <AppStack gap="sm">
@@ -325,18 +353,6 @@ function NoneState({ busy, onGenerate }: NoneStateProps) {
       </AppInline>
     </AppStack>
   );
-}
-
-interface PendingStateProps {
-  generatedLink: GeneratedLinkState | null;
-
-  ultimoEnlaceExpiraEn: string | null;
-
-  busy: boolean;
-
-  onGenerate: () => void;
-
-  onRegenerate: () => void;
 }
 
 function PendingState({
@@ -407,14 +423,6 @@ function PendingState({
   );
 }
 
-interface ConformeStateProps {
-  nombre: string | null;
-
-  telefono: string | null;
-
-  firmadoEn: string | null;
-}
-
 function ConformeState({ nombre, telefono, firmadoEn }: ConformeStateProps) {
   return (
     <AppStack gap="sm">
@@ -436,7 +444,7 @@ function ConformeState({ nombre, telefono, firmadoEn }: ConformeStateProps) {
 
           {firmadoEn ? (
             <p className="text-xs text-[hsl(var(--app-muted-foreground))]">
-              Firmado {formatDateTime(firmadoEn)}
+              Firmado {formattFechaWithMinutes(firmadoEn)}
             </p>
           ) : null}
         </div>
@@ -445,7 +453,7 @@ function ConformeState({ nombre, telefono, firmadoEn }: ConformeStateProps) {
   );
 }
 
-function RetrabajoState() {
+function RetrabajoState({ busy, onGenerate }: RetrabajoStateProps) {
   return (
     <AppStack gap="sm">
       <AppAlert tone="warning" title="El cliente requiere retrabajo">
@@ -455,27 +463,29 @@ function RetrabajoState() {
       <AppInline align="center" gap="xs">
         <Wrench size={16} />
 
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-semibold">Requiere retrabajo</p>
 
           <p className="text-xs text-[hsl(var(--app-muted-foreground))]">
-            Este ciclo de conformidad ya fue respondido.
+            El ciclo anterior ya fue respondido. Cuando corresponda, puedes
+            generar una nueva solicitud para que el cliente vuelva a confirmar
+            el trabajo.
           </p>
         </div>
       </AppInline>
+
+      <AppInline justify="end" gap="xs">
+        <AppButton
+          type="button"
+          variant="primary"
+          leftIcon={<RefreshCw size={15} />}
+          loading={busy}
+          loadingText="Generando..."
+          onClick={onGenerate}
+        >
+          Generar nueva solicitud
+        </AppButton>
+      </AppInline>
     </AppStack>
   );
-}
-
-function formatDateTime(value: string): string {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return new Intl.DateTimeFormat("es-GT", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
 }
