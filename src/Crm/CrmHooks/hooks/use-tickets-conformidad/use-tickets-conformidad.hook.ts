@@ -8,6 +8,7 @@ import {
   GenerarEnlaceTicketConformidadPayload,
   GenerarEnlaceTicketConformidadResponse,
   RegistrarFirmaClienteResponse,
+  RegistrarFirmaTecnicoResponse,
   RequerirRetrabajoResponse,
   TicketConformidadDetalle,
   TicketConformidadPublicaResponse,
@@ -236,5 +237,41 @@ export function useRegistrarFirmaClienteTicketConformidad(token: string) {
     undefined,
 
     undefined,
+  );
+}
+
+export function useRegistrarFirmaTecnico(
+  conformidadId: number | null,
+  ticketId: number,
+) {
+  const queryClient = useQueryClient();
+
+  const endpoint =
+    conformidadId !== null &&
+    Number.isInteger(conformidadId) &&
+    conformidadId > 0
+      ? crm_endpoints.ticket_conformidad.firmaTecnico(conformidadId)
+      : "";
+
+  return crm.useMutationApi<RegistrarFirmaTecnicoResponse, FormData>(
+    "post",
+
+    endpoint,
+
+    undefined,
+
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: ticketConformidadQkeys.actualByTicket(ticketId),
+        });
+
+        if (conformidadId !== null) {
+          queryClient.invalidateQueries({
+            queryKey: ticketConformidadQkeys.detalle(conformidadId),
+          });
+        }
+      },
+    },
   );
 }

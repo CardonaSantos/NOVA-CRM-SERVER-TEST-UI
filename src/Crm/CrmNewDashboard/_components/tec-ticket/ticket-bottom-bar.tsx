@@ -4,9 +4,10 @@ import { getBlockedActionLabel } from "../ticket-helpers";
 import { AppButton } from "@/components/app/primitives/app-button";
 import { AppStack } from "@/components/app/primitives/app-stack";
 
-import { CheckCircle2, Link2, Send, Wrench } from "lucide-react";
+import { CheckCircle2, Link2, PenLine, Send, Wrench } from "lucide-react";
 
 import { TicketLifecycleAction } from "./ticket-details";
+import { useNavigate } from "react-router-dom";
 
 interface TicketBottomActionBarProps {
   ticket: TicketAsignadoTecnico;
@@ -30,9 +31,15 @@ export function TicketBottomActionBar({
   onRequestAction,
   onRequestConformidad,
 }: TicketBottomActionBarProps) {
+  const navigate = useNavigate();
+
   const disabledLabel = getBlockedActionLabel(ticket.estado);
 
   const busy = isLoading || conformidadLoading;
+
+  const handleFirmaTecnico = () => {
+    navigate(`/crm/ticket-detalles/${ticket.id}/firma-tecnico`);
+  };
 
   return (
     <div
@@ -46,6 +53,17 @@ export function TicketBottomActionBar({
       ].join(" ")}
     >
       <AppStack gap="xs">
+        <AppButton
+          type="button"
+          size="lg"
+          variant="outline"
+          width="full"
+          leftIcon={<PenLine className="h-5 w-5" aria-hidden="true" />}
+          onClick={handleFirmaTecnico}
+        >
+          Firmar como técnico
+        </AppButton>
+
         <AppButton
           type="button"
           size="lg"

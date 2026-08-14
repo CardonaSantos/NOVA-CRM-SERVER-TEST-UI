@@ -65,6 +65,7 @@ import DesinstalacionesPage from "../CrmDesinstalaciones/DesinstalacionesPage";
 import DesinstalacionDetallePage from "../CrmDesinstalaciones/DesinstalacionDetallePage";
 import DesinstalacionCreatePage from "../CrmDesinstalaciones/create/common/crear-desinstalacion.mapper";
 import AutorizacionesDesinstalacionPage from "../CrmDesinstalacionesAuth/AutorizacionesDesinstalacionPage";
+import TicketFirmaTecnicoPage from "../CrmNewDashboard/_components/firma/tec-ticket/ticket-firma-tecnico";
 
 function CrmRoutes() {
   const { checkAuth } = useAuthStore();
@@ -183,7 +184,10 @@ function CrmRoutes() {
           path="/crm/ticket-detalles/:id"
           element={crmRoute(<TicketAsignadoDetails />)}
         />
-
+        <Route
+          path="/crm/ticket-detalles/:id/firma-tecnico"
+          element={crmRoute(<TicketFirmaTecnicoPage />)}
+        />
         {/* ========================= */}
         {/* FACTURACIÓN / PAGOS */}
         {/* ========================= */}

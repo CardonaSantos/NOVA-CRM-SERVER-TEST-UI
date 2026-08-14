@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { AppAlert } from "@/components/app/primitives/app-alert";
@@ -9,10 +8,7 @@ import { PublicContent } from "../components/PublicContent";
 
 import { useTicketConformidadPublica } from "../hooks/tickets-conformidad/use-ticket-conformidad-public";
 
-import {
-  TicketConformidadPublicResultado,
-  TicketConformidadPublicStep,
-} from "../types/conformidad-types.public";
+import { TicketConformidadPublicResultado } from "../types/conformidad-types.public";
 
 export default function TicketConformidadPublicPage() {
   const { token } = useParams<{
@@ -20,10 +16,6 @@ export default function TicketConformidadPublicPage() {
   }>();
 
   const query = useTicketConformidadPublica(token);
-
-  const [step, setStep] = useState<TicketConformidadPublicStep>(
-    TicketConformidadPublicStep.DECISION,
-  );
 
   if (!token) {
     return (
@@ -75,12 +67,5 @@ export default function TicketConformidadPublicPage() {
     );
   }
 
-  return (
-    <PublicContent
-      token={token}
-      data={data}
-      step={step}
-      onStepChange={setStep}
-    />
-  );
+  return <PublicContent token={token} data={data} />;
 }

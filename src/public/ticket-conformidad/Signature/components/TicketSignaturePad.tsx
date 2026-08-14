@@ -101,7 +101,7 @@ export const TicketSignaturePad = forwardRef<
 
     // label = "Firma del cliente",
 
-    description = "Firme dentro del recuadro utilizando el dedo, un lápiz táctil o el mouse.",
+    description = "",
 
     onEmptyChange,
   },
@@ -439,9 +439,9 @@ export const TicketSignaturePad = forwardRef<
             <div>
               <p className="text-sm font-medium text-slate-400">Firme aquí</p>
 
-              {/* <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-slate-400">
                 Use su dedo, lápiz o mouse
-              </p> */}
+              </p>
             </div>
           </div>
         )}

@@ -177,6 +177,9 @@ export const crm_endpoints = {
 
   // TICKET- CONFORMIDAD
   ticket_conformidad: {
+    firmaTecnico: (conformidadId: number) =>
+      `ticket-soporte-conformidad/${conformidadId}/firma-tecnico`,
+
     crearPorTicket: (ticketId: number) =>
       `ticket-soporte-conformidad/tickets/${ticketId}`,
 

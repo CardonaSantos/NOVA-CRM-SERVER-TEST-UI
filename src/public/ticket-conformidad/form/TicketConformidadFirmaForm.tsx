@@ -20,7 +20,7 @@ import type { RegistrarFirmaTicketConformidadResponse } from "../types/ticket-co
 import { TicketSignaturePadHandle } from "../Signature/types/ticket-signature-pad.types";
 import { useRegistrarFirmaTicketConformidad } from "../hooks/tickets-conformidad/use-registrar-firma-ticket-conformidad";
 import { getTicketConformidadPublicErrorMessage } from "../errors/ticket-conformidad-public-error";
-import { TicketConformidadBackButton } from "../components/TicketConformidadBackButton";
+// import { TicketConformidadBackButton } from "../components/TicketConformidadBackButton";
 import { TicketSignaturePad } from "../Signature/components/TicketSignaturePad";
 
 interface TicketConformidadFirmaFormProps {
@@ -38,7 +38,7 @@ export function TicketConformidadFirmaForm({
   token,
   nombreInicial,
   telefonoInicial,
-  onBack,
+  // onBack,
   onCompleted,
 }: TicketConformidadFirmaFormProps) {
   const signatureRef = useRef<TicketSignaturePadHandle | null>(null);
@@ -127,10 +127,8 @@ export function TicketConformidadFirmaForm({
     <AppCard>
       <AppForm form={form} onSubmit={handleSubmit}>
         <AppStack gap="md">
-          <TicketConformidadBackButton disabled={busy} onClick={onBack} />
-
           <div className="">
-            <h2 className="text-base font-semibold sm:text-lg text-center">
+            <h2 className="text-base font-semibold sm:text-lg text-center p-2">
               Confirmar conformidad
             </h2>
           </div>
@@ -147,6 +145,7 @@ export function TicketConformidadFirmaForm({
               sm: 2,
             }}
             gap="xs"
+            className="px-2"
           >
             <AppFormInput<TicketConformidadFirmaFormValues>
               name="nombreFirmante"

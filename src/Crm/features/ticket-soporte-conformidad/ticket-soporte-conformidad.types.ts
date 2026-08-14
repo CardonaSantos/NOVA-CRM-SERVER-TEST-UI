@@ -433,3 +433,17 @@ export interface GenerarEnlaceTicketConformidadPayload {
   canal: TicketConformidadCanal;
   telefonoDestino?: string | null;
 }
+
+export interface RegistrarFirmaTecnicoResponse {
+  conformidadId: number;
+
+  firmaId: number;
+
+  mediaId: number;
+
+  usuarioFirmanteId: number;
+
+  nombreFirmante: string;
+
+  firmadoEn: string;
+}
