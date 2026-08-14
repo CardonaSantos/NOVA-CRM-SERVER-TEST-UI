@@ -1,12 +1,13 @@
-import { TicketAsignadoTecnico } from "@/Crm/features/dashboard/dashboard-tickets";
+import type { TicketAsignadoTecnico } from "@/Crm/features/dashboard/dashboard-tickets";
+
 import { getBlockedActionLabel } from "../ticket-helpers";
 
 import { AppButton } from "@/components/app/primitives/app-button";
-import { AppStack } from "@/components/app/primitives/app-stack";
 
 import { CheckCircle2, Link2, PenLine, Send, Wrench } from "lucide-react";
 
-import { TicketLifecycleAction } from "./ticket-details";
+import type { TicketLifecycleAction } from "./ticket-details";
+
 import { useNavigate } from "react-router-dom";
 
 interface TicketBottomActionBarProps {
@@ -35,8 +36,6 @@ export function TicketBottomActionBar({
 
   const disabledLabel = getBlockedActionLabel(ticket.estado);
 
-  const busy = isLoading || conformidadLoading;
-
   const handleFirmaTecnico = () => {
     navigate(`/crm/ticket-detalles/${ticket.id}/firma-tecnico`);
   };
@@ -44,54 +43,76 @@ export function TicketBottomActionBar({
   return (
     <div
       className={[
-        "fixed inset-x-0 bottom-0 z-40",
-        "border-t border-[hsl(var(--app-border,var(--border)))]",
-        "bg-[hsl(var(--app-background,var(--background))/0.88)]",
-        "px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2",
+        /*
+         * Sticky mantiene la barra visible,
+         * pero NO la saca del flujo como fixed.
+         * Así no tapa el contenido.
+         */
+        "sticky bottom-2 z-30",
+
+        "mt-4",
+        "rounded-[var(--app-radius-lg)]",
+        "border border-[hsl(var(--app-border,var(--border)))]",
+
+        "bg-[hsl(var(--app-background,var(--background))/0.94)]",
+        "p-2",
+
+        "shadow-sm",
         "backdrop-blur-md",
-        "md:sticky md:bottom-3 md:rounded-[var(--app-radius-lg)] md:border md:px-3 md:py-3",
       ].join(" ")}
     >
-      <AppStack gap="xs">
+      {/*
+       * Acciones auxiliares:
+       * Firma + enlace lado a lado.
+       */}
+      <div className="grid grid-cols-2 gap-2">
         <AppButton
           type="button"
-          size="lg"
-          variant="outline"
+          size="md"
+          variant="secondary"
           width="full"
-          leftIcon={<PenLine className="h-5 w-5" aria-hidden="true" />}
+          leftIcon={<PenLine className="h-4 w-4" aria-hidden="true" />}
           onClick={handleFirmaTecnico}
         >
-          Firmar como técnico
+          Firmar
         </AppButton>
 
         <AppButton
           type="button"
-          size="lg"
+          size="md"
           variant="outline"
           width="full"
           loading={conformidadLoading}
-          loadingText="Generando enlace..."
+          loadingText="Generando..."
           disabled={conformidadLoading}
-          leftIcon={<Link2 className="h-5 w-5" />}
+          leftIcon={<Link2 className="h-4 w-4" aria-hidden="true" />}
           onClick={onRequestConformidad}
         >
-          Generar enlace de conformidad
+          Enlace cliente
         </AppButton>
+      </div>
 
+      {/*
+       * Acción principal del lifecycle.
+       *
+       * Separada visualmente de las
+       * acciones auxiliares.
+       */}
+      <div className="mt-2">
         {lifecycleAction ? (
           <AppButton
             type="button"
-            size="lg"
+            size="md"
             variant={lifecycleAction === "review" ? "secondary" : "primary"}
             width="full"
             loading={isLoading}
             loadingText="Procesando..."
-            disabled={busy}
+            disabled={isLoading}
             leftIcon={
               lifecycleAction === "review" ? (
-                <Send className="h-5 w-5" aria-hidden="true" />
+                <Send className="h-4 w-4" aria-hidden="true" />
               ) : (
-                <Wrench className="h-5 w-5" aria-hidden="true" />
+                <Wrench className="h-4 w-4" aria-hidden="true" />
               )
             }
             onClick={onRequestAction}
@@ -103,16 +124,16 @@ export function TicketBottomActionBar({
         ) : (
           <AppButton
             type="button"
-            size="lg"
-            variant="secondary"
+            size="md"
+            variant="outline"
             width="full"
             disabled
-            leftIcon={<CheckCircle2 className="h-5 w-5" aria-hidden="true" />}
+            leftIcon={<CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
           >
             {disabledLabel}
           </AppButton>
         )}
-      </AppStack>
+      </div>
     </div>
   );
 }
