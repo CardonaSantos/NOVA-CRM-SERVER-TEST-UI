@@ -31,30 +31,23 @@ import { ticketConformidadQkeys } from "./qk";
  * estado NONE.
  */
 export function useGetConformidadActual(ticketId: number, enabled: boolean) {
-  const canQuery = enabled && Number.isInteger(ticketId) && ticketId > 0;
+  const validTicketId = Number.isInteger(ticketId) && ticketId > 0;
+
+  const canQuery = enabled && validTicketId;
 
   return crm.useQueryApi<TicketConformidadDetalle>(
     ticketConformidadQkeys.actualByTicket(ticketId),
 
-    canQuery ? crm_endpoints.ticket_conformidad.actualPorTicket(ticketId) : "",
+    validTicketId
+      ? crm_endpoints.ticket_conformidad.actualPorTicket(ticketId)
+      : "",
 
     undefined,
 
     {
       enabled: canQuery,
-
       staleTime: 0,
-
       refetchOnWindowFocus: false,
-
-      /*
-       * Un 404 significa normalmente:
-       *
-       * "Este ticket todavía no tiene conformidad".
-       *
-       * No queremos reintentar varias veces antes de
-       * mostrar el estado inicial del dialog.
-       */
       retry: false,
     },
   );
