@@ -1,0 +1,38 @@
+import type { Route } from "./crm-route-types";
+import {
+  botMensajeriaRoute,
+  clientesRoute,
+  creditosRoute,
+  dashboardRoute,
+  desinstalacionesRoute,
+  facturacionZonaRoute,
+  instalacionesRoute,
+  opticoRoute,
+  perfilRoute,
+  plantillasContratosRoute,
+  registrosEliminadosRoute,
+  reportsRoute,
+  rutasCobroRoute,
+  sectoresRoute,
+  serviciosRoute,
+  soporteRoute,
+} from "./crm-route-items";
+
+export const routesCrm_Admin: Route[] = [
+  dashboardRoute,
+  clientesRoute,
+  instalacionesRoute,
+  soporteRoute,
+  desinstalacionesRoute,
+  serviciosRoute,
+  facturacionZonaRoute,
+  sectoresRoute,
+  botMensajeriaRoute,
+  plantillasContratosRoute,
+  rutasCobroRoute,
+  opticoRoute,
+  creditosRoute,
+  registrosEliminadosRoute,
+  reportsRoute,
+  perfilRoute,
+];
