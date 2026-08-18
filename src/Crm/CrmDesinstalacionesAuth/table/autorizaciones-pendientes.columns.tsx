@@ -14,6 +14,8 @@ import { formattShortFecha } from "@/utils/formattFechas";
 import { EstadoAutorizacionDesinstalacion } from "@/Crm/features/desinstalaciones/desinstalaciones.enums";
 
 export type AutorizacionesPendientesTableActions = {
+  canAuthorize: boolean;
+
   onViewDesinstalacion: (desinstalacionId: number) => void;
 
   onAprobar: (item: AutorizacionPendienteListItem) => void;
@@ -268,11 +270,11 @@ export function createAutorizacionesPendientesColumns(
         </AppBadge>
       ),
     },
-
+    // NUEVOS
     createAppRowActionsColumn<AutorizacionPendienteListItem>({
       header: "",
 
-      size: 44,
+      size: 64,
 
       actions: (row) => [
         {
@@ -284,25 +286,29 @@ export function createAutorizacionesPendientesColumns(
             actions.onViewDesinstalacion(row.original.desinstalacion.id),
         },
 
-        {
-          label: "Aprobar autorización",
+        ...(actions.canAuthorize
+          ? [
+              {
+                label: "Aprobar autorización",
 
-          icon: <CheckCircle2 size={14} />,
+                icon: <CheckCircle2 size={14} />,
 
-          onClick: () => actions.onAprobar(row.original),
-        },
+                onClick: () => actions.onAprobar(row.original),
+              },
 
-        {
-          label: "Rechazar autorización",
+              {
+                label: "Rechazar autorización",
 
-          icon: <XCircle size={14} />,
+                icon: <XCircle size={14} />,
 
-          tone: "danger",
+                tone: "danger" as const,
 
-          separatorBefore: true,
+                separatorBefore: true,
 
-          onClick: () => actions.onRechazar(row.original),
-        },
+                onClick: () => actions.onRechazar(row.original),
+              },
+            ]
+          : []),
       ],
     }),
   ];

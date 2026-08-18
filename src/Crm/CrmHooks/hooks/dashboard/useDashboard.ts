@@ -6,6 +6,7 @@ import { useCrmMutation, useCrmQuery } from "@/Crm/hooks/crmApiHooks";
 import {
   DashboardQkeys,
   InstalacionesVsDesinstalacionesQkeys,
+  tecnicoPanelQkeys,
   TicketsAsignadosQkeys,
   TicketsProcesoQkeys,
 } from "./Qk";
@@ -14,6 +15,9 @@ import { NivoBarData } from "@/Crm/_charts/bar-chart/bar-chart.interface";
 import { TicketsDashboardSoporte } from "@/Crm/CrmNewDashboard/interfaces/dashboard-interfaces";
 import { TicketAsignadoTecnico } from "@/Crm/features/dashboard/dashboard-tickets";
 import { useQueryClient } from "@tanstack/react-query";
+import { crm } from "@/Crm/API/crmApi";
+import { crm_endpoints } from "@/Crm/API/routes/endpoints";
+import { TecnicoPanelResponse } from "@/Crm/features/dashboard/panel-tecnico.types";
 
 /**
  * DATOS KPI
@@ -203,5 +207,22 @@ export function usePatchTicketEnRevision(ticketId: number) {
         });
       },
     },
+  );
+}
+
+/**
+ * CONSEGUIR DATOS PARA UN PANEL DE TECNICO
+ * - no ocupa id del tecnico, el mismo envia el token por su cuenta
+ * y se dereiva ahi
+ */
+/**
+ *
+ * @param
+ * @returns
+ */
+export function useGetTecnicoPanel() {
+  return crm.useQueryApi<TecnicoPanelResponse>(
+    tecnicoPanelQkeys.all,
+    crm_endpoints.dashboard.tecnico_panel,
   );
 }

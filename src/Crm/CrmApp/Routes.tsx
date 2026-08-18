@@ -65,7 +65,6 @@ import OltMainPage from "../Olt/page";
 import BotMainPage from "../CrmBot/page";
 
 import { MainDashboardPage } from "../CrmNewDashboard/page";
-import TecDashboard from "../CrmNewDashboard/tec-dashboard";
 
 import TicketAsignadoDetails from "../CrmNewDashboard/_components/tec-ticket/ticket-details";
 import TicketFirmaTecnicoPage from "../CrmNewDashboard/_components/firma/tec-ticket/ticket-firma-tecnico";
@@ -111,6 +110,8 @@ import {
 } from "../CrmAuthRoutes/auth/crm-permissions";
 import { RequirePermission } from "../CrmAuthRoutes/auth/require-permission";
 import { CrmForbiddenPage } from "../CrmAuthRoutes/auth/CrmForbiddenPage";
+import TicketsAsignados from "../CrmNewDashboard/tickets-asignados";
+import TecDashboard from "../CrmNewDashboard/tecnico-panel/TecDashboard";
 
 /*
  * Entrada principal del CRM.
@@ -325,6 +326,14 @@ function CrmRoutes() {
           element={permissionRoute(
             CRM_PERMISSION.DASHBOARD_TECNICO_VER,
             <TecDashboard />,
+          )}
+        />
+
+        <Route
+          path="/crm/tickets/tecnico"
+          element={permissionRoute(
+            CRM_PERMISSION.DASHBOARD_TECNICO_VER,
+            <TicketsAsignados />,
           )}
         />
 

@@ -1,11 +1,5 @@
 import type { ReactNode } from "react";
-import {
-  Activity,
-  ChevronDown,
-  CircleUserRound,
-  Network,
-  Router,
-} from "lucide-react";
+import { Activity, ChevronDown, CircleUserRound, Router } from "lucide-react";
 
 import { AppAlert } from "@/components/app/primitives/app-alert";
 import { AppBadge } from "@/components/app/primitives/app-badge";
@@ -16,6 +10,7 @@ import { AppSeparator } from "@/components/app/primitives/app-separator";
 import { AppStack } from "@/components/app/primitives/app-stack";
 
 import type { InstalacionPppoeOperacionTimelineItem } from "@/Crm/features/instalaciones_pppoe_auditoria/instalacion-pppoe-auditoria.interfaces";
+
 import {
   formatPppoeDate,
   formatPppoeDuration,
@@ -33,7 +28,17 @@ import { AuditoriaReintentarOperacionButton } from "./auditoria-reintentar-butto
 type Props = {
   item: InstalacionPppoeOperacionTimelineItem;
 
+  /**
+   * La operación admite reintento y el usuario
+   * tiene autorización para ejecutarlo.
+   */
   canRetry: boolean;
+
+  /**
+   * Permite mostrar infraestructura, diagnóstico,
+   * trazabilidad y datos técnicos internos.
+   */
+  canViewSensitive: boolean;
 
   onRetrySuccess?: () => void;
 };
@@ -53,6 +58,7 @@ function ContextItem({ label, value }: { label: string; value: ReactNode }) {
 export function AuditoriaOperacionCard({
   item,
   canRetry,
+  canViewSensitive,
   onRetrySuccess,
 }: Props) {
   const { operacion, contexto, actores } = item;
@@ -63,6 +69,14 @@ export function AuditoriaOperacionCard({
     "Sistema";
 
   const hasError = Boolean(operacion.errorCodigo || operacion.errorMensaje);
+
+  const operationMetadata = canViewSensitive
+    ? `${formatPppoeDate(item.fecha)} · ${operacion.canal} · Intento ${
+        operacion.numeroIntento
+      } · ${formatPppoeDuration(operacion.duracionMs)}`
+    : `${formatPppoeDate(item.fecha)} · Intento ${
+        operacion.numeroIntento
+      } · ${formatPppoeDuration(operacion.duracionMs)}`;
 
   return (
     <AppCard>
@@ -93,16 +107,14 @@ export function AuditoriaOperacionCard({
                   </AppInline>
 
                   <p className="mt-1 text-[11px] text-[hsl(var(--app-muted-foreground))]">
-                    {formatPppoeDate(item.fecha)} · {operacion.canal} · Intento{" "}
-                    {operacion.numeroIntento} ·{" "}
-                    {formatPppoeDuration(operacion.duracionMs)}
+                    {operationMetadata}
                   </p>
                 </div>
               </AppInline>
 
               <AppInline align="center" gap="xs" wrap={false}>
                 <span className="hidden text-[11px] text-[hsl(var(--app-muted-foreground))] sm:inline">
-                  Ver trazabilidad
+                  {canViewSensitive ? "Ver trazabilidad" : "Ver detalles"}
                 </span>
 
                 <ChevronDown
@@ -112,7 +124,18 @@ export function AuditoriaOperacionCard({
               </AppInline>
             </AppInline>
 
-            <AppGrid cols={{ base: 1, sm: 2, lg: 4 }} gap="xs">
+            {/* ================================================= */}
+            {/* RESUMEN OPERACIONAL */}
+            {/* ================================================= */}
+
+            <AppGrid
+              cols={{
+                base: 1,
+                sm: 2,
+                lg: canViewSensitive ? 4 : 2,
+              }}
+              gap="xs"
+            >
               <ContextItem
                 label="Operador"
                 value={
@@ -128,47 +151,51 @@ export function AuditoriaOperacionCard({
               />
 
               <ContextItem
-                label="Cuenta"
+                label="Estado de cuenta"
                 value={
-                  <AppInline align="center" gap="xs" wrap>
-                    <span>Usuario {contexto.cuentaPppoe.usuario}</span>
-
-                    <AppBadge
-                      tone={getAccountTone(contexto.cuentaPppoe.estado)}
-                      appearance="soft"
-                      size="xs"
-                      radius="full"
-                    >
-                      {humanizePppoeEnum(contexto.cuentaPppoe.estado)}
-                    </AppBadge>
-                  </AppInline>
+                  <AppBadge
+                    tone={getAccountTone(contexto.cuentaPppoe.estado)}
+                    appearance="soft"
+                    size="xs"
+                    radius="full"
+                  >
+                    {humanizePppoeEnum(contexto.cuentaPppoe.estado)}
+                  </AppBadge>
                 }
               />
 
-              <ContextItem
-                label="Perfil"
-                value={
-                  <AppInline align="center" gap="xs" wrap={false}>
-                    <Network className="size-3.5 shrink-0" aria-hidden="true" />
+              {/* =============================================== */}
+              {/* CONTEXTO SENSIBLE */}
+              {/* =============================================== */}
 
-                    <span className="truncate">
-                      {contexto.perfilHomologacion?.codigoPerfil ??
-                        "Sin perfil"}
-                    </span>
-                  </AppInline>
-                }
-              />
+              {canViewSensitive ? (
+                <>
+                  <ContextItem
+                    label="Cuenta PPPoE"
+                    value={
+                      <span className="truncate">
+                        {contexto.cuentaPppoe.usuario}
+                      </span>
+                    }
+                  />
 
-              <ContextItem
-                label="Router"
-                value={
-                  <AppInline align="center" gap="xs" wrap={false}>
-                    <Router className="size-3.5 shrink-0" aria-hidden="true" />
+                  <ContextItem
+                    label="Router"
+                    value={
+                      <AppInline align="center" gap="xs" wrap={false}>
+                        <Router
+                          className="size-3.5 shrink-0"
+                          aria-hidden="true"
+                        />
 
-                    <span className="truncate">{contexto.router.nombre}</span>
-                  </AppInline>
-                }
-              />
+                        <span className="truncate">
+                          {contexto.router.nombre}
+                        </span>
+                      </AppInline>
+                    }
+                  />
+                </>
+              ) : null}
             </AppGrid>
           </AppStack>
         </summary>
@@ -177,23 +204,18 @@ export function AuditoriaOperacionCard({
           <AppSeparator size="xs" spacing="sm" />
 
           <AppStack gap="sm">
-            <AppGrid cols={{ base: 1, sm: 2, lg: 4 }} gap="sm">
-              <ContextItem label="Operación" value={`#${operacion.id}`} />
+            {/* =============================================== */}
+            {/* CONTEXTO GENERAL */}
+            {/* =============================================== */}
 
-              <ContextItem
-                label="Idempotencia"
-                value={
-                  <code className="break-all text-[10px]">
-                    {operacion.claveIdempotencia}
-                  </code>
-                }
-              />
-
-              <ContextItem
-                label="Host"
-                value={`${contexto.router.host}:${contexto.router.sshPort}`}
-              />
-
+            <AppGrid
+              cols={{
+                base: 1,
+                sm: 2,
+                lg: canViewSensitive ? 4 : 1,
+              }}
+              gap="sm"
+            >
               <ContextItem
                 label="Plan"
                 value={
@@ -202,7 +224,35 @@ export function AuditoriaOperacionCard({
                   "Sin plan"
                 }
               />
+
+              {/* ============================================= */}
+              {/* INFRAESTRUCTURA INTERNA */}
+              {/* ============================================= */}
+
+              {canViewSensitive ? (
+                <>
+                  <ContextItem label="Operación" value={`#${operacion.id}`} />
+
+                  <ContextItem
+                    label="Idempotencia"
+                    value={
+                      <code className="break-all text-[10px]">
+                        {operacion.claveIdempotencia}
+                      </code>
+                    }
+                  />
+
+                  <ContextItem
+                    label="Host SSH"
+                    value={`${contexto.router.host}:${contexto.router.sshPort}`}
+                  />
+                </>
+              ) : null}
             </AppGrid>
+
+            {/* =============================================== */}
+            {/* MOTIVO OPERACIONAL */}
+            {/* =============================================== */}
 
             {operacion.motivo ? (
               <div>
@@ -214,15 +264,34 @@ export function AuditoriaOperacionCard({
               </div>
             ) : null}
 
+            {/* =============================================== */}
+            {/* ERROR */}
+            {/* =============================================== */}
+
             {hasError ? (
-              <AppAlert
-                tone="danger"
-                size="xs"
-                title={operacion.errorCodigo ?? "OPERACION_FALLIDA"}
-              >
-                {operacion.errorMensaje ?? "Sin mensaje de error."}
-              </AppAlert>
+              canViewSensitive ? (
+                <AppAlert
+                  tone="danger"
+                  size="xs"
+                  title={operacion.errorCodigo ?? "OPERACION_FALLIDA"}
+                >
+                  {operacion.errorMensaje ?? "Sin mensaje de error."}
+                </AppAlert>
+              ) : (
+                <AppAlert
+                  tone="danger"
+                  size="xs"
+                  title="La operación no pudo completarse"
+                >
+                  La operación presentó un inconveniente técnico. Puedes
+                  reintentarlo si tu cuenta tiene autorización para hacerlo.
+                </AppAlert>
+              )
             ) : null}
+
+            {/* =============================================== */}
+            {/* ACCIÓN OPERACIONAL INDEPENDIENTE */}
+            {/* =============================================== */}
 
             {canRetry ? (
               <AuditoriaReintentarOperacionButton
@@ -231,30 +300,38 @@ export function AuditoriaOperacionCard({
               />
             ) : null}
 
-            <AuditoriaJsonDetails
-              title="Ver resultado técnico"
-              value={operacion.resultado}
-            />
+            {/* =============================================== */}
+            {/* DIAGNÓSTICO TÉCNICO SENSIBLE */}
+            {/* =============================================== */}
 
-            <details>
-              <summary className="cursor-pointer text-xs font-semibold text-[hsl(var(--app-primary))]">
-                Pasos técnicos ({item.pasos.length})
-              </summary>
+            {canViewSensitive ? (
+              <>
+                <AuditoriaJsonDetails
+                  title="Ver resultado técnico"
+                  value={operacion.resultado}
+                />
 
-              <div className="mt-2">
-                <AuditoriaOperacionPasos pasos={item.pasos} />
-              </div>
-            </details>
+                <details>
+                  <summary className="cursor-pointer text-xs font-semibold text-[hsl(var(--app-primary))]">
+                    Pasos técnicos ({item.pasos.length})
+                  </summary>
 
-            <details>
-              <summary className="cursor-pointer text-xs font-semibold text-[hsl(var(--app-primary))]">
-                Eventos de auditoría ({item.auditorias.length})
-              </summary>
+                  <div className="mt-2">
+                    <AuditoriaOperacionPasos pasos={item.pasos} />
+                  </div>
+                </details>
 
-              <div className="mt-2">
-                <AuditoriaEventos auditorias={item.auditorias} compact />
-              </div>
-            </details>
+                <details>
+                  <summary className="cursor-pointer text-xs font-semibold text-[hsl(var(--app-primary))]">
+                    Eventos de auditoría ({item.auditorias.length})
+                  </summary>
+
+                  <div className="mt-2">
+                    <AuditoriaEventos auditorias={item.auditorias} compact />
+                  </div>
+                </details>
+              </>
+            ) : null}
           </AppStack>
         </div>
       </details>

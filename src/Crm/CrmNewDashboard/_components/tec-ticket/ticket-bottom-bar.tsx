@@ -4,7 +4,7 @@ import { getBlockedActionLabel } from "../ticket-helpers";
 
 import { AppButton } from "@/components/app/primitives/app-button";
 
-import { CheckCircle2, Link2, PenLine, Send, Wrench } from "lucide-react";
+import { CheckCircle2, PenLine, Send, Wrench } from "lucide-react";
 
 import type { TicketLifecycleAction } from "./ticket-details";
 
@@ -80,15 +80,15 @@ export function TicketBottomActionBar({
         <AppButton
           type="button"
           size="md"
-          variant="outline"
+          variant="secondary"
           width="full"
           loading={conformidadLoading}
           loadingText="Generando..."
           disabled={conformidadLoading}
-          leftIcon={<Link2 className="h-4 w-4" aria-hidden="true" />}
+          leftIcon={<PenLine className="h-4 w-4" aria-hidden="true" />}
           onClick={onRequestConformidad}
         >
-          Enlace cliente
+          Firma cliente
         </AppButton>
       </div>
 

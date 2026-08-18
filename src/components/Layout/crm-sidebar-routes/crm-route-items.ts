@@ -101,6 +101,12 @@ export const instalacionesTecnicoRoute: Route = {
   href: "/crm/instalaciones/tecnico",
 };
 
+export const ticketsTecnicoRoute: Route = {
+  icon: ListAltCheckOutline,
+  label: "Tickets Asignados",
+  href: "/crm/tickets/tecnico",
+};
+
 export const soporteRoute: Route = {
   icon: MonitorSmartphone,
   label: "Soporte",

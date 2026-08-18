@@ -13,19 +13,32 @@ import {
   getEstadoToneInstalacion,
   humanizeEnum,
 } from "./instalacion-utils.utils";
+
 import {
   InstalacionDetailTab,
   InstalacionDetailViewProps,
 } from "../instalacion-detail.types";
+
 import { InstalacionGeneralTab } from "../tabs/instalacion-general-tab";
 import { InstalacionPppoeAuditoriaTab } from "../tabs/instalacion-pppoe-auditoria-tab";
 import { InstalacionPppoeAdministracionTab } from "../tabs/instalacion-pppoe-administracion-tab";
+import { CRM_PERMISSION } from "@/Crm/CrmAuthRoutes/auth/crm-permissions";
+import { useAuthorization } from "@/Crm/CrmAuthRoutes/auth/use-authorization";
 
 const mutedTextClass = "text-[hsl(var(--app-muted-foreground))]";
 
 export function InstalacionDetailView(props: InstalacionDetailViewProps) {
   const { instalacion } = props;
+
   const clienteNombre = getClienteNombre(instalacion);
+
+  const { can } = useAuthorization();
+
+  const canViewAudit = can(CRM_PERMISSION.PPPOE_AUDITORIA_VER);
+
+  const canViewPppoeAdministration = can(
+    CRM_PERMISSION.PPPOE_ADMINISTRACION_VER,
+  );
 
   const tabs = useAppStateHandlers<{
     activeTab: InstalacionDetailTab;
@@ -91,28 +104,38 @@ export function InstalacionDetailView(props: InstalacionDetailViewProps) {
             icon: <ClipboardList aria-hidden="true" />,
             content: <InstalacionGeneralTab {...props} />,
           },
-          {
-            value: "auditoria",
-            label: "Auditoría",
-            icon: <History aria-hidden="true" />,
-            content: (
-              <InstalacionPppoeAuditoriaTab
-                instalacionId={instalacion.id}
-                enabled={activeTab === "auditoria"}
-              />
-            ),
-          },
-          {
-            value: "pppoe",
-            label: "Administración PPPoE",
-            icon: <Router aria-hidden="true" />,
-            content: (
-              <InstalacionPppoeAdministracionTab
-                instalacion={instalacion}
-                enabled={activeTab === "pppoe"}
-              />
-            ),
-          },
+
+          ...(canViewAudit
+            ? [
+                {
+                  value: "auditoria",
+                  label: "Auditoría",
+                  icon: <History aria-hidden="true" />,
+                  content: (
+                    <InstalacionPppoeAuditoriaTab
+                      instalacionId={instalacion.id}
+                      enabled={activeTab === "auditoria"}
+                    />
+                  ),
+                } as const,
+              ]
+            : []),
+
+          ...(canViewPppoeAdministration
+            ? [
+                {
+                  value: "pppoe",
+                  label: "Administración PPPoE",
+                  icon: <Router aria-hidden="true" />,
+                  content: (
+                    <InstalacionPppoeAdministracionTab
+                      instalacion={instalacion}
+                      enabled={activeTab === "pppoe"}
+                    />
+                  ),
+                } as const,
+              ]
+            : []),
         ]}
       />
     </AppStack>

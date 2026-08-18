@@ -23,11 +23,17 @@ import { AutorizacionPendienteListItem } from "../features/desinstalaciones/auth
 import { DESINSTALACIONES_ROUTES } from "../CrmDesinstalaciones/table/routes.route";
 import { AutorizacionDesinstalacionActionHost } from "./components/AutorizacionDesinstalacionActionHost";
 import { AutorizacionesPendientesTable } from "./table/autorizaciones-pendientes-table";
+import { CRM_PERMISSION } from "../CrmAuthRoutes/auth/crm-permissions";
+import { useAuthorization } from "../CrmAuthRoutes/auth/use-authorization";
 
 const EMPTY_ITEMS: AutorizacionPendienteListItem[] = [];
 
 function AutorizacionesDesinstalacionPage() {
   const navigate = useNavigate();
+
+  const { can } = useAuthorization();
+
+  const canAuthorize = can(CRM_PERMISSION.DESINSTALACIONES_AUTORIZAR);
 
   const table = useAppTableHandlers({
     initialPageIndex: 0,
@@ -44,11 +50,14 @@ function AutorizacionesDesinstalacionPage() {
 
   const handleAction = useCallback(
     (request: AutorizacionDesinstalacionActionRequest) => {
-      setActionRequest(request);
+      if (!canAuthorize) {
+        return;
+      }
 
+      setActionRequest(request);
       actionDialog.open();
     },
-    [actionDialog.open],
+    [actionDialog.open, canAuthorize],
   );
 
   const handleActionOpenChange = useCallback(
@@ -71,6 +80,8 @@ function AutorizacionesDesinstalacionPage() {
   const columns = useMemo(
     () =>
       createAutorizacionesPendientesColumns({
+        canAuthorize,
+
         onViewDesinstalacion: (desinstalacionId) => {
           navigate(DESINSTALACIONES_ROUTES.detalle(desinstalacionId));
         },
@@ -78,7 +89,6 @@ function AutorizacionesDesinstalacionPage() {
         onAprobar: (item) => {
           handleAction({
             action: "aprobar",
-
             item,
           });
         },
@@ -86,12 +96,11 @@ function AutorizacionesDesinstalacionPage() {
         onRechazar: (item) => {
           handleAction({
             action: "rechazar",
-
             item,
           });
         },
       }),
-    [handleAction, navigate],
+    [canAuthorize, handleAction, navigate],
   );
 
   const queryParams = useMemo(

@@ -9,10 +9,11 @@ import type {
 
 import { AuditoriaIndependienteCard } from "./auditoria-independiente-card";
 import { AuditoriaOperacionCard } from "./auditoria-operacion-card";
+import { useAuthorization } from "@/Crm/CrmAuthRoutes/auth/use-authorization";
+import { CRM_PERMISSION } from "@/Crm/CrmAuthRoutes/auth/crm-permissions";
 
 type Props = {
   items: InstalacionPppoeTimelineItem[];
-
   onRetrySuccess?: () => void;
 };
 
@@ -23,6 +24,12 @@ function isOperationItem(
 }
 
 export function AuditoriaTimeline({ items, onRetrySuccess }: Props) {
+  const { can } = useAuthorization();
+
+  const canRetryOperations = can(CRM_PERMISSION.PPPOE_OPERACIONES_REINTENTAR);
+
+  const canViewSensitive = can(CRM_PERMISSION.PPPOE_DIAGNOSTICO_SENSIBLE_VER);
+
   const retryableOperationIds = useMemo(() => {
     const latestByChain = new Map<
       number,
@@ -36,10 +43,6 @@ export function AuditoriaTimeline({ items, onRetrySuccess }: Props) {
 
       const operation = item.operacion;
 
-      /*
-       * Los reintentos conservan la referencia
-       * a la operación raíz.
-       */
       const chainRootId = operation.reintentoDeId ?? operation.id;
 
       const current = latestByChain.get(chainRootId);
@@ -75,13 +78,17 @@ export function AuditoriaTimeline({ items, onRetrySuccess }: Props) {
           <AuditoriaOperacionCard
             key={`operacion-${item.operacion.id}`}
             item={item}
-            canRetry={retryableOperationIds.has(item.operacion.id)}
+            canRetry={
+              canRetryOperations && retryableOperationIds.has(item.operacion.id)
+            }
+            canViewSensitive={canViewSensitive}
             onRetrySuccess={onRetrySuccess}
           />
         ) : (
           <AuditoriaIndependienteCard
             key={`auditoria-${item.auditoria.id}`}
             item={item}
+            canViewSensitive={canViewSensitive}
           />
         ),
       )}

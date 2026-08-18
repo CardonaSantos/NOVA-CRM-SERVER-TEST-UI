@@ -4,6 +4,10 @@ export const crm_endpoints = {
     login: "/auth/login-user",
   },
 
+  dashboard: {
+    tecnico_panel: "/dashboard/panel-tecnico",
+  },
+
   instalaciones: {
     post_instalacion: `/cliente-instalaciones`,
 

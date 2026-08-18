@@ -10,19 +10,28 @@ import { AppDataState } from "@/components/app/primitives/app-data-state";
 import { AppEmptyState } from "@/components/app/primitives/app-empty-state";
 import { AppInline } from "@/components/app/primitives/app-inline";
 import { AppStack } from "@/components/app/primitives/app-stack";
+
 import { useGetAuditoriaPppoeInstalacion } from "@/Crm/CrmHooks/hooks/pppoe-auditoria/pppoe-auditoria-instalacion-hook";
+
 import type { ClienteInstalacionDetalle } from "@/Crm/features/instalaciones/instalaciones.interfaces";
+
 import type { FiltrarAuditoriaPppoeInstalacionParams } from "@/Crm/features/instalaciones_pppoe_auditoria/instalacion-pppoe-auditoria.filters";
+
 import type { PppoeAdminActionRequest } from "@/Crm/features/instalaciones_pppoe_administracion/pppoe-administracion.interfaces";
+
 import { findAuthorizablePendingOperation } from "@/Crm/features/instalaciones_pppoe_administracion/pppoe-administracion.utils";
+
 import {
   getEstadoToneInstalacion,
   humanizeEnum,
 } from "../details/instalacion-utils.utils";
+
 import { PppoePendingOperationCard } from "../pppoe-admin/pppoe-pending-operation-card";
 import { PppoeAdminAccessCard } from "../pppoe-admin/pppoe-admin-access-card";
 import { PppoeAdminActionHost } from "../pppoe-admin/pppoe-admin-action-host";
 import { PppoeAdminProgress } from "../pppoe-admin/pppoe-admin-progress";
+import { useAuthorization } from "@/Crm/CrmAuthRoutes/auth/use-authorization";
+import { CRM_PERMISSION } from "@/Crm/CrmAuthRoutes/auth/crm-permissions";
 
 type Props = {
   instalacion: ClienteInstalacionDetalle;
@@ -46,41 +55,114 @@ export function InstalacionPppoeAdministracionTab({
   instalacion,
   enabled,
 }: Props) {
+  const { can } = useAuthorization();
+
+  /*
+   * Permite entrar al módulo de administración.
+   *
+   * SUPER_ADMIN / COORDINADOR / OFICINA
+   * según la matriz que definimos.
+   */
+  const canViewAdministration = can(CRM_PERMISSION.PPPOE_ADMINISTRACION_VER);
+
+  /*
+   * Permite consultar operaciones internas/protegidas.
+   *
+   * OFICINA no debería necesitar esto para
+   * suspender, reactivar o revelar credenciales.
+   */
+  const canViewOperations = can(CRM_PERMISSION.PPPOE_OPERACIONES_VER);
+
+  /*
+   * No basta con ocultar la tab.
+   * Evitamos también ejecutar queries si el usuario
+   * no tiene acceso a Administración PPPoE.
+   */
+  const administrationEnabled = enabled && canViewAdministration;
+
+  /*
+   * Las operaciones pendientes son una capa más sensible.
+   * Sólo se consultan si el usuario tiene esa capacidad.
+   */
+  const pendingOperationsEnabled = administrationEnabled && canViewOperations;
+
   const actionFlow = useAppConfirmHandler<PppoeAdminActionRequest>();
 
   const summaryQuery = useGetAuditoriaPppoeInstalacion(
     instalacion.id,
     SUMMARY_QUERY,
-    enabled,
+    administrationEnabled,
   );
 
   const pendingQuery = useGetAuditoriaPppoeInstalacion(
     instalacion.id,
     PENDING_QUERY,
-    enabled,
+    pendingOperationsEnabled,
   );
 
   const summary = summaryQuery.data?.summary ?? null;
+
   const accesses = summary?.accesosPppoe ?? [];
 
-  const pendingOperation = useMemo(
-    () => findAuthorizablePendingOperation(pendingQuery.data?.data ?? []),
-    [pendingQuery.data?.data],
-  );
+  const pendingOperation = useMemo(() => {
+    if (!canViewOperations) {
+      return null;
+    }
+
+    return findAuthorizablePendingOperation(pendingQuery.data?.data ?? []);
+  }, [canViewOperations, pendingQuery.data?.data]);
 
   const { refetch: refetchSummary } = summaryQuery;
+
   const { refetch: refetchPending } = pendingQuery;
 
   const handleRefresh = useCallback(async () => {
-    await Promise.all([refetchSummary(), refetchPending()]);
-  }, [refetchPending, refetchSummary]);
+    if (!canViewAdministration) {
+      return;
+    }
+
+    /*
+     * Importante:
+     * React Query permite llamar refetch()
+     * incluso sobre una query enabled:false.
+     *
+     * Por eso no debemos ejecutar
+     * refetchPending() para Oficina.
+     */
+    if (canViewOperations) {
+      await Promise.all([refetchSummary(), refetchPending()]);
+
+      return;
+    }
+
+    await refetchSummary();
+  }, [
+    canViewAdministration,
+    canViewOperations,
+    refetchPending,
+    refetchSummary,
+  ]);
 
   const handleCompleted = useCallback(() => {
     actionFlow.setOpen(false);
+
     void handleRefresh();
   }, [actionFlow.setOpen, handleRefresh]);
 
-  if (!enabled) return null;
+  /*
+   * Defensa local.
+   *
+   * Aunque el padre normalmente no debería crear
+   * esta tab sin PPPOE_ADMINISTRACION_VER,
+   * este componente tampoco debe funcionar
+   * si se reutiliza accidentalmente en otro lugar.
+   */
+  if (!administrationEnabled) {
+    return null;
+  }
+
+  const isFetching =
+    summaryQuery.isFetching || (canViewOperations && pendingQuery.isFetching);
 
   return (
     <>
@@ -96,7 +178,9 @@ export function InstalacionPppoeAdministracionTab({
             <div className="min-w-0">
               <AppInline align="center" gap="xs" wrap>
                 <Router className="size-5" aria-hidden="true" />
+
                 <p className="text-sm font-semibold">Administración PPPoE</p>
+
                 <AppBadge
                   tone={getEstadoToneInstalacion(instalacion.estado)}
                   appearance="soft"
@@ -106,9 +190,11 @@ export function InstalacionPppoeAdministracionTab({
                   {humanizeEnum(instalacion.estado)}
                 </AppBadge>
               </AppInline>
+
               <p className="mt-1 text-xs text-[hsl(var(--app-muted-foreground))]">
-                Alta, credenciales, suspensión, reactivación y autorización de
-                operaciones protegidas desde oficina.
+                {canViewOperations
+                  ? "Administración del acceso, credenciales y operaciones PPPoE."
+                  : "Administración operativa del acceso y credenciales del servicio."}
               </p>
             </div>
 
@@ -116,7 +202,7 @@ export function InstalacionPppoeAdministracionTab({
               type="button"
               variant="outline"
               size="sm"
-              disabled={summaryQuery.isFetching || pendingQuery.isFetching}
+              disabled={isFetching}
               loadingText="Actualizando..."
               onClick={handleRefresh}
             >
@@ -128,7 +214,7 @@ export function InstalacionPppoeAdministracionTab({
 
         <AppDataState
           isLoading={summaryQuery.isLoading}
-          isFetching={summaryQuery.isFetching || pendingQuery.isFetching}
+          isFetching={isFetching}
           error={summaryQuery.error}
           isEmpty={Boolean(summaryQuery.data) && !summary}
           onRetry={handleRefresh}
@@ -180,7 +266,7 @@ export function InstalacionPppoeAdministracionTab({
                 />
               )}
 
-              {pendingOperation ? (
+              {canViewOperations && pendingOperation ? (
                 <PppoePendingOperationCard
                   empresaId={summary.instalacion.empresaId}
                   instalacionId={instalacion.id}
@@ -189,7 +275,7 @@ export function InstalacionPppoeAdministracionTab({
                 />
               ) : null}
 
-              {pendingQuery.error ? (
+              {canViewOperations && pendingQuery.error ? (
                 <AppAlert
                   tone="warning"
                   title="Operaciones pendientes no disponibles"

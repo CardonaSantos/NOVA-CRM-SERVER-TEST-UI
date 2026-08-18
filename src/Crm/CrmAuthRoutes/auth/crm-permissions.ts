@@ -75,6 +75,31 @@ export const CRM_PERMISSION = {
 
   // Desarrollo / diagnóstico
   PRUEBAS_VER: "pruebas.ver",
+
+  //   nuevos
+
+  // PPPoE / infraestructura sensible
+  PPPOE_AUDITORIA_VER: "pppoe.auditoria.ver",
+
+  PPPOE_OPERACIONES_VER: "pppoe.operaciones.ver",
+
+  PPPOE_OPERACIONES_REINTENTAR: "pppoe.operaciones.reintentar",
+
+  PPPOE_DIAGNOSTICO_SENSIBLE_VER: "pppoe.diagnostico-sensible.ver",
+
+  PPPOE_CREDENCIALES_REVELAR: "pppoe.credenciales.revelar",
+
+  // PPPoE / administración
+
+  PPPOE_ACTIVAR_INICIAL: "pppoe.activar-inicial",
+
+  PPPOE_ADMINISTRACION_VER: "pppoe.administracion.ver",
+
+  PPPOE_PREALTA_REINTENTAR: "pppoe.prealta.reintentar",
+
+  PPPOE_SUSPENDER: "pppoe.suspender",
+
+  PPPOE_REACTIVAR: "pppoe.reactivar",
 } as const;
 
 export type CrmPermission =

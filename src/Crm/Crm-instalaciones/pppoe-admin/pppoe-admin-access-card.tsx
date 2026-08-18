@@ -9,17 +9,22 @@ import { AppGrid } from "@/components/app/primitives/app-grid";
 import { AppInline } from "@/components/app/primitives/app-inline";
 import { AppSeparator } from "@/components/app/primitives/app-separator";
 import { AppStack } from "@/components/app/primitives/app-stack";
+
 import type {
   PppoeAuditoriaAccesoAdministrableResumen,
   PppoeAuditoriaCuentaCompleta,
 } from "@/Crm/features/instalaciones_pppoe_auditoria/instalacion-pppoe-auditoria.interfaces";
+
 import type { PppoeAdminActionRequest } from "@/Crm/features/instalaciones_pppoe_administracion/pppoe-administracion.interfaces";
+
+import { resolvePppoeMainAction } from "@/Crm/features/instalaciones_pppoe_administracion/pppoe-administracion.utils";
 
 import {
   formatAuditDate,
   humanizeEnum,
 } from "../details/instalacion-utils.utils";
-import { resolvePppoeMainAction } from "@/Crm/features/instalaciones_pppoe_administracion/pppoe-administracion.utils";
+import { useAuthorization } from "@/Crm/CrmAuthRoutes/auth/use-authorization";
+import { CRM_PERMISSION } from "@/Crm/CrmAuthRoutes/auth/crm-permissions";
 
 type Props = {
   instalacionId: number;
@@ -39,6 +44,7 @@ function Detail({ label, value }: { label: string; value: ReactNode }) {
       <dt className="text-[10px] uppercase tracking-wide text-[hsl(var(--app-muted-foreground))]">
         {label}
       </dt>
+
       <dd className="mt-0.5 break-words text-xs font-medium">{value}</dd>
     </div>
   );
@@ -51,11 +57,46 @@ export function PppoeAdminAccessCard({
   onAction,
   fechaActivacionServicio,
 }: Props) {
+  const { can } = useAuthorization();
+
+  /*
+   * Capacidades de acción.
+   *
+   * Ninguna modifica la lógica operacional existente.
+   * Únicamente decide si el usuario puede disparar
+   * la acción que resolvePppoeMainAction determine.
+   */
+  const canActivateInitial = can(CRM_PERMISSION.PPPOE_ACTIVAR_INICIAL);
+
+  const canSuspend = can(CRM_PERMISSION.PPPOE_SUSPENDER);
+
+  const canReactivate = can(CRM_PERMISSION.PPPOE_REACTIVAR);
+
+  const canRevealCredentials = can(CRM_PERMISSION.PPPOE_CREDENCIALES_REVELAR);
+
+  const canRetryPrealta = can(CRM_PERMISSION.PPPOE_PREALTA_REINTENTAR);
+
+  /*
+   * Información técnica sensible.
+   *
+   * Oficina puede administrar el servicio, pero no
+   * necesita conocer router, perfil interno,
+   * sincronización o errores técnicos.
+   */
+  const canViewSensitive = can(CRM_PERMISSION.PPPOE_DIAGNOSTICO_SENSIBLE_VER);
+
   const account = access.cuentaPppoe;
   const accountState = account?.estado ?? null;
 
   const isFullAccount = fullAccount?.id === account?.id;
 
+  /*
+   * IMPORTANTE:
+   *
+   * Esta lógica queda exactamente igual.
+   * Los permisos NO deciden qué acción corresponde.
+   * Sólo deciden si el usuario puede ejecutarla.
+   */
   const mainAction = account
     ? resolvePppoeMainAction({
         estadoCuenta: account.estado,
@@ -82,6 +123,7 @@ export function PppoeAdminAccessCard({
         >
           <div className="min-w-0">
             <p className="text-sm font-semibold">Acceso PPPoE #{access.id}</p>
+
             <p className="mt-0.5 text-xs text-[hsl(var(--app-muted-foreground))]">
               {access.servicioInternet?.nombre ?? "Sin servicio asignado"}
             </p>
@@ -91,6 +133,7 @@ export function PppoeAdminAccessCard({
             <AppBadge tone="neutral" appearance="soft" size="xs" radius="full">
               {humanizeEnum(access.estado)}
             </AppBadge>
+
             {accountState ? (
               <AppBadge
                 tone={accountState === "ACTIVA" ? "success" : "warning"}
@@ -110,44 +153,86 @@ export function PppoeAdminAccessCard({
 
         <AppSeparator size="xs" spacing="none" />
 
+        {/* ================================================= */}
+        {/* INFORMACIÓN OPERACIONAL */}
+        {/* ================================================= */}
+
         <dl>
-          <AppGrid cols={{ base: 2, md: 3 }} gap="sm">
+          <AppGrid
+            cols={{
+              base: 2,
+              md: canViewSensitive ? 3 : 2,
+            }}
+            gap="sm"
+          >
             <Detail
               label="Tecnología"
               value={humanizeEnum(access.tecnologia)}
             />
+
             <Detail
               label="Autenticación"
               value={humanizeEnum(access.metodoAutenticacion)}
             />
-            <Detail label="Usuario" value={account?.usuario ?? "Sin generar"} />
-            <Detail
-              label="Perfil"
-              value={account?.codigoPerfil ?? "Sin homologación confirmada"}
-            />
-            <Detail
-              label="Router"
-              value={account?.routerNombre ?? "Sin router confirmado"}
-            />
-            <Detail
-              label="Última sincronización"
-              value={
-                isFullAccount
-                  ? formatAuditDate(fullAccount?.ultimaSincronizacionEn ?? null)
-                  : "Sin información"
-              }
-            />
+
+            {/* ============================================= */}
+            {/* CONTEXTO TÉCNICO SENSIBLE */}
+            {/* ============================================= */}
+
+            {canViewSensitive ? (
+              <>
+                <Detail
+                  label="Usuario PPPoE"
+                  value={account?.usuario ?? "Sin generar"}
+                />
+
+                <Detail
+                  label="Perfil RouterOS"
+                  value={account?.codigoPerfil ?? "Sin homologación confirmada"}
+                />
+
+                <Detail
+                  label="Router"
+                  value={account?.routerNombre ?? "Sin router confirmado"}
+                />
+
+                <Detail
+                  label="Última sincronización"
+                  value={
+                    isFullAccount
+                      ? formatAuditDate(
+                          fullAccount?.ultimaSincronizacionEn ?? null,
+                        )
+                      : "Sin información"
+                  }
+                />
+              </>
+            ) : null}
           </AppGrid>
         </dl>
 
-        {isFullAccount && fullAccount?.ultimoError ? (
+        {/* ================================================= */}
+        {/* ERROR TÉCNICO */}
+        {/* ================================================= */}
+
+        {canViewSensitive && isFullAccount && fullAccount?.ultimoError ? (
           <AppAlert tone="danger" title="Último error PPPoE" size="xs">
             {fullAccount.ultimoError}
           </AppAlert>
         ) : null}
 
+        {/* ================================================= */}
+        {/* ACCIONES */}
+        {/* ================================================= */}
+
         <AppInline justify="end" gap="xs" wrap fullWidth>
-          {!account ? (
+          {/*
+           * No existe cuenta:
+           * la lógica original ofrece reintentar prealta.
+           *
+           * Ahora requiere además permiso.
+           */}
+          {!account && canRetryPrealta ? (
             <AppButton
               type="button"
               variant="outline"
@@ -166,7 +251,13 @@ export function PppoeAdminAccessCard({
             </AppButton>
           ) : null}
 
-          {account && mainAction === "ACTIVAR_INICIAL" ? (
+          {/*
+           * Activación inicial.
+           *
+           * La condición mainAction sigue siendo
+           * la misma que antes.
+           */}
+          {account && mainAction === "ACTIVAR_INICIAL" && canActivateInitial ? (
             <AppButton
               type="button"
               size="sm"
@@ -182,7 +273,10 @@ export function PppoeAdminAccessCard({
             </AppButton>
           ) : null}
 
-          {account && mainAction === "SUSPENDER" ? (
+          {/*
+           * Suspensión.
+           */}
+          {account && mainAction === "SUSPENDER" && canSuspend ? (
             <AppButton
               type="button"
               variant="danger"
@@ -200,7 +294,10 @@ export function PppoeAdminAccessCard({
             </AppButton>
           ) : null}
 
-          {account && mainAction === "REACTIVAR" ? (
+          {/*
+           * Reactivación.
+           */}
+          {account && mainAction === "REACTIVAR" && canReactivate ? (
             <AppButton
               type="button"
               size="sm"
@@ -217,7 +314,11 @@ export function PppoeAdminAccessCard({
             </AppButton>
           ) : null}
 
-          {account ? (
+          {/*
+           * Revelar credenciales es independiente
+           * del estado principal de la cuenta.
+           */}
+          {account && canRevealCredentials ? (
             <AppButton
               type="button"
               variant="outline"
