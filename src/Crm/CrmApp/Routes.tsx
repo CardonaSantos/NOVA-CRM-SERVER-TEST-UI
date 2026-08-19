@@ -38,7 +38,9 @@ import PlantillasMensajes from "../CrmMensajes/PlantillasMensajes";
 import BoletaTicket from "../CrmTickets/CrmTicketsBoleta/BoletaTicket";
 
 import PlantillaContratoManage from "../CrmPlantillaContrato/CrmPlantillaContratoManage";
-import ContratoServicioPDF from "../CrmPlantillaContrato/CrmContratoPdf";
+import ContratoServicioPDF, {
+  ContratoInstalacionPage,
+} from "../CrmPlantillaContrato/CrmContratoPdf";
 
 import { RutasCobroEdit } from "../CrmRutas/RutasCobroEdit";
 
@@ -500,10 +502,10 @@ function CrmRoutes() {
         />
 
         <Route
-          path="/crm/contrato/:creditoId/:plantillaId"
+          path="/crm/instalaciones/:instalacionId/contrato"
           element={permissionRoute(
             CRM_PERMISSION.CREDITOS_VER,
-            <PrinteablePlantilla />,
+            <ContratoInstalacionPage />,
           )}
         />
 

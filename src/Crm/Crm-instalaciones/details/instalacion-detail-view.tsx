@@ -1,4 +1,10 @@
-import { ClipboardList, History, Router } from "lucide-react";
+import {
+  ClipboardList,
+  FilePenLine,
+  History,
+  Printer,
+  Router,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { useAppStateHandlers } from "@/components/app/handlers";
@@ -24,6 +30,13 @@ import { InstalacionPppoeAuditoriaTab } from "../tabs/instalacion-pppoe-auditori
 import { InstalacionPppoeAdministracionTab } from "../tabs/instalacion-pppoe-administracion-tab";
 import { CRM_PERMISSION } from "@/Crm/CrmAuthRoutes/auth/crm-permissions";
 import { useAuthorization } from "@/Crm/CrmAuthRoutes/auth/use-authorization";
+import {
+  AppDropdownMenu,
+  AppDropdownMenuContent,
+  AppDropdownMenuItem,
+  AppDropdownMenuSeparator,
+  AppDropdownMenuTrigger,
+} from "@/components/app/primitives/app-dropdown-menu";
 
 const mutedTextClass = "text-[hsl(var(--app-muted-foreground))]";
 
@@ -82,11 +95,54 @@ export function InstalacionDetailView(props: InstalacionDetailViewProps) {
           </p>
         </div>
 
-        <AppButton asChild variant="outline" size="sm">
-          <Link to={`/crm/cliente/${instalacion.cliente.id}/?tab=resumen`}>
-            Ver cliente
-          </Link>
-        </AppButton>
+        <AppInline>
+          <AppDropdownMenu>
+            <AppDropdownMenuTrigger asChild>
+              <AppButton
+                type="button"
+                variant="ghost"
+                size="xs"
+                width="auto"
+                leftIcon={<FilePenLine size={13} />}
+                className="h-7"
+              >
+                Contrato
+              </AppButton>
+            </AppDropdownMenuTrigger>
+
+            <AppDropdownMenuContent
+              align="end"
+              side="bottom"
+              sideOffset={8}
+              width="md"
+              size="xs"
+              className="z-[120]"
+            >
+              {props.plantillas.length ? (
+                props.plantillas.map((plantilla) => (
+                  <Link
+                    to={`/crm/instalaciones/${instalacion.id}/contrato?plantilla=${plantilla.id}`}
+                    className="flex w-full items-center gap-2"
+                  >
+                    <AppDropdownMenuItem key={plantilla.id}>
+                      <span className="truncate">{plantilla.nombre}</span>
+                    </AppDropdownMenuItem>
+                  </Link>
+                ))
+              ) : (
+                <div className="px-2 py-1.5 text-xs italic text-[hsl(var(--app-muted-foreground))]">
+                  Sin plantillas disponibles
+                </div>
+              )}
+            </AppDropdownMenuContent>
+          </AppDropdownMenu>
+
+          <AppButton asChild variant="outline" size="sm">
+            <Link to={`/crm/cliente/${instalacion.cliente.id}/?tab=resumen`}>
+              Ver cliente
+            </Link>
+          </AppButton>
+        </AppInline>
       </AppInline>
 
       <AppTabs

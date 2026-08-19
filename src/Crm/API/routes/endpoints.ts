@@ -207,4 +207,9 @@ export const crm_endpoints = {
         `ticket-soporte-conformidad/public/${encodeURIComponent(token)}/firma`,
     },
   },
+
+  contrato: {
+    contrato_instalacion: (contratoId: number, plantillaId: number) =>
+      `contrato-cliente/get-one-contrato/${contratoId}/${plantillaId}`,
+  },
 } as const;

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
@@ -16,6 +16,8 @@ import { useStoreCrm } from "@/Crm/ZustandCrm/ZustandCrmContext";
 import { INSTALACIONES_ROUTES } from "../filters/routes";
 import { InstalacionDetailView } from "./instalacion-detail-view";
 import { isImageEvidence } from "./instalacion-utils.utils";
+import { usePlantillasContrato } from "@/Crm/CrmCustomer/API/customer-profile.queries";
+import { PlantillasInterface } from "@/Crm/features/plantilla-contratos/plantilla-contratos";
 
 type InstalacionDetailContentProps = {
   instalacionId: number;
@@ -28,6 +30,13 @@ function InstalacionDetailContent({
   const query = useGetInstalacion(instalacionId, empresaId);
   const gallery = useAppDisclosure();
   const [activeEvidenceIndex, setActiveEvidenceIndex] = useState(0);
+
+  const { data: plantillasData } = usePlantillasContrato();
+
+  const plantillas = React.useMemo<PlantillasInterface[]>(
+    () => plantillasData ?? [],
+    [plantillasData],
+  );
 
   const imageEvidences = useMemo(
     () => (query.data?.evidencias ?? []).filter(isImageEvidence),
@@ -75,6 +84,7 @@ function InstalacionDetailContent({
               instalacion={query.data}
               empresaId={empresaId}
               onOpenEvidence={handleOpenEvidence}
+              plantillas={plantillas}
             />
           ) : null}
         </AppDataState>
