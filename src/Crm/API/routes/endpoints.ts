@@ -212,4 +212,34 @@ export const crm_endpoints = {
     contrato_instalacion: (contratoId: number, plantillaId: number) =>
       `contrato-cliente/get-one-contrato/${contratoId}/${plantillaId}`,
   },
+
+  reportes: {
+    get_clientes_xlsx: "/excel-reports/clientes",
+
+    get_tickets_xlsx: "/excel-reports/tickets",
+
+    get_facturacion_xlsx: "/excel-reports/facturacion",
+  },
+
+  reportes_catalogos: {
+    get_servicios: "/servicio-internet/get-services-to-customer",
+
+    get_departamentos: "/location/get-all-departamentos",
+
+    get_municipios_departamento: (departamentoId: number) =>
+      `/location/get-municipio/${departamentoId}`,
+
+    get_sectores: "/sector",
+
+    // tickets
+    get_ticket_etiquetas: "/tags-ticket/get-tags-to-ticket",
+
+    get_ticket_tecnicos: "/user/get-tecnicos-to-ticket",
+
+    get_ticket_clientes: "/internet-customer/get-customers-to-ticket",
+
+    get_facturacion_usuarios: "/user/get-users-to-rutas",
+    get_facturacion_zonas:
+      "/facturacion-zona/get-zonas-facturacion-to-customer",
+  },
 } as const;

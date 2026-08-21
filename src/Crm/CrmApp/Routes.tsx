@@ -57,8 +57,6 @@ import CustomerProfile from "../CrmCustomer/newCustomerPage/customer-profile";
 
 import RutasAsignadasMain from "../CrmRutas/_rutas_asignadas/rutas_asignadas_main";
 
-import ReportsMainPage from "../reports/page/ReportsMainPage";
-
 import ClientesTable from "../CrmCustomers/CrmCustomerTable";
 
 import RouterMainPage from "../routers/page";
@@ -78,7 +76,6 @@ import { CreditosMainPage } from "@/Crm/CrmCredito/main/page";
 import CreditoDetails from "../CrmCredito/credito/page";
 
 import ContratoBuilder from "../CrmCredito/contrato/page";
-import PrinteablePlantilla from "../CrmCredito/contrato/printeable";
 
 import TicketDashboard from "../CrmTickets/crm-ticket-dashboard";
 
@@ -114,6 +111,7 @@ import { RequirePermission } from "../CrmAuthRoutes/auth/require-permission";
 import { CrmForbiddenPage } from "../CrmAuthRoutes/auth/CrmForbiddenPage";
 import TicketsAsignados from "../CrmNewDashboard/tickets-asignados";
 import TecDashboard from "../CrmNewDashboard/tecnico-panel/TecDashboard";
+import { ReportesPage } from "../CrmReportes/pages/reportes-page";
 
 /*
  * Entrada principal del CRM.
@@ -570,7 +568,7 @@ function CrmRoutes() {
           path="/crm/reports"
           element={permissionRoute(
             CRM_PERMISSION.REPORTES_VER,
-            <ReportsMainPage />,
+            <ReportesPage />,
           )}
         />
 
