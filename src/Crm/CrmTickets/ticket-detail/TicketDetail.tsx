@@ -69,7 +69,7 @@ export default function TicketDetail({
   const deleteDialog = useAppDisclosure();
   const closeDialog = useAppDisclosure();
   const conformidadDialog = useAppDisclosure();
-
+  // generar comiteo
   const ticketEdit = useAppStateHandlers<Ticket>(ticket);
 
   const createTicketResumen = useCreateTicketResumen();
