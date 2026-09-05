@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Crown, UsersRound } from "lucide-react";
+import { UsersRound } from "lucide-react";
 import type { DetalleInstalacionTecnicaResponse } from "@/Crm/features/instalaciones_tecnico/instalaciones-tecnicas-response.interface";
 import { AppBadge } from "@/components/app/primitives/app-badge";
 import { AppInline } from "@/components/app/primitives/app-inline";

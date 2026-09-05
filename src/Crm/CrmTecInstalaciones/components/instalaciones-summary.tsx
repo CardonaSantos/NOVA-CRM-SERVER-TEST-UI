@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { CheckCircle2, Clock3, TriangleAlert, Wrench } from "lucide-react";
+import { CheckCircle2, TriangleAlert, Wrench } from "lucide-react";
 import { AppCard } from "@/components/app/primitives/app-card";
 import { AppGrid } from "@/components/app/primitives/app-grid";
 import { AppInline } from "@/components/app/primitives/app-inline";

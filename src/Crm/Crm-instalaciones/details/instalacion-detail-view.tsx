@@ -1,10 +1,4 @@
-import {
-  ClipboardList,
-  FilePenLine,
-  History,
-  Printer,
-  Router,
-} from "lucide-react";
+import { ClipboardList, FilePenLine, History, Router } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { useAppStateHandlers } from "@/components/app/handlers";
@@ -34,7 +28,6 @@ import {
   AppDropdownMenu,
   AppDropdownMenuContent,
   AppDropdownMenuItem,
-  AppDropdownMenuSeparator,
   AppDropdownMenuTrigger,
 } from "@/components/app/primitives/app-dropdown-menu";
 
