@@ -2,7 +2,7 @@ import { AppBadge } from "@/components/app/primitives/app-badge";
 import { AppButton } from "@/components/app/primitives/app-button";
 import { AppInline } from "@/components/app/primitives/app-inline";
 import { AppStack } from "@/components/app/primitives/app-stack";
-import { PerfilHomologacionListItem } from "@/Crm/features/pppoe-homologaciones/pppoe-homologaciones.types";
+import { PerfilHomologacionListItem } from "@/Crm/features/pppoe-homologaciones/intefaces";
 
 interface PerfilMobileCardProps {
   item: PerfilHomologacionListItem;

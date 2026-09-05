@@ -2,7 +2,6 @@
 
 import {
   Ellipsis,
-  FileSignature,
   FileText,
   Pin,
   RotateCcw,

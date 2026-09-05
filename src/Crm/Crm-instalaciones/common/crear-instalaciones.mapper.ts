@@ -68,8 +68,8 @@ export function toCrearInstalacionPayload(
     costoMateriales: toOptionalNumber(values.costos.costoMateriales),
     costoManoObra: toOptionalNumber(values.costos.costoManoObra),
     costoOtros: toOptionalNumber(values.costos.costoOtros),
-    montoCobradoCliente: toOptionalNumber(values.costos.montoCobradoCliente),
-    saldoPendiente: toOptionalNumber(values.costos.saldoPendiente),
+    // montoCobradoCliente: toOptionalNumber(values.costos.montoCobradoCliente),
+    // saldoPendiente: toOptionalNumber(values.costos.saldoPendiente),
     notas: toOptionalString(values.costos.notas),
   };
 
