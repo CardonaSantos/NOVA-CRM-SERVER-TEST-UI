@@ -1,10 +1,16 @@
-import { EstadoCliente } from "../features/cliente-interfaces/cliente-types";
+import { ServicioInternet } from "../CrmServices/CrmServiciosWifi/servicio-internet.types";
+import {
+  EstadoCliente,
+  EstadoCobranzaCliente,
+} from "../features/cliente-interfaces/cliente-types";
+import { ClasificacionCliente } from "../features/credito/credito-interfaces";
 
-export interface ClienteDto {
+export interface ClienteTableDto {
   id: number;
   nombreCompleto: string;
-  // nombreCompleto: string;
   estado: EstadoCliente;
+  estadoCobranza: EstadoCobranzaCliente;
+
   telefono: string;
   dpi: string;
   direccion: string;
@@ -15,25 +21,25 @@ export interface ClienteDto {
   municipioId: number;
   departamentoId: number;
   direccionIp: string;
-  servicios: ServicioInternetDto[];
+  servicios: ServicioInternet[];
   facturacionZona: string;
   facturacionZonaId: number;
   sector: Sector;
   sectorId: number;
+  clasificacionCredito: creditoResumen;
 }
-
+interface creditoResumen {
+  resumen: {
+    puntualidadPct: number;
+    promedioAtraso: number;
+    medianaAtraso: number;
+    rachaActual: number;
+    score: number;
+    clasificacion: ClasificacionCliente;
+  };
+}
 interface Sector {
   id: number;
   nombre: string;
   clientesCount: number;
-}
-
-export interface ServicioInternetDto {
-  id: number;
-  nombreServicio: string;
-  velocidad: string;
-  precio: number;
-  estado: string;
-  creadoEn: Date;
-  actualizadoEn: Date;
 }

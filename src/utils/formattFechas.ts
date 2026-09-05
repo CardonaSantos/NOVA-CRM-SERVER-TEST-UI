@@ -14,10 +14,14 @@ dayjs.extend(timezone);
 
 dayjs.locale("es");
 
-export const formattShortFecha = (value: string | Date): string => {
+export const formattShortFecha = (value: string | Date | null): string => {
+  if (!value) return "N/A";
   return dayjs(value).tz(zona).format("DD/MM/YYYY");
 };
 
-export const formattFechaWithMinutes = (value: string | Date): string => {
+export const formattFechaWithMinutes = (
+  value: string | Date | null,
+): string => {
+  if (!value) return "N/A";
   return dayjs(value).tz(zona).format("DD/MM/YYYY hh:mm a");
 };

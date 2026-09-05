@@ -12,11 +12,11 @@ export function useUpdateCustomer(customerId: number) {
     undefined,
     {
       onSuccess: (_data, payload) => {
-        // Refresca detalles del cliente
         queryClient.invalidateQueries({
           queryKey: customerQkeys.specificCustomer(payload.id),
         });
       },
-    }
+    },
   );
 }
+//comentario para pushear

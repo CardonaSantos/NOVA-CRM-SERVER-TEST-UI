@@ -1,622 +1,355 @@
 "use client";
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Search,
-  MoreVertical,
-  User,
-  Users,
-  Calendar,
-  Play,
-  Eye,
-  Edit,
-  Trash2,
-  MapPinned,
-  UserCheck,
-  Phone,
-  Info,
-  AlertCircle,
-  Loader2,
-  BookmarkX,
-  Printer,
-} from "lucide-react";
+import * as React from "react";
 import { toast } from "sonner";
-import { RutasSkeleton } from "./RutasSkeleton";
-import { EstadoRuta, PagedResponse, type Ruta } from "./rutas-types";
-import { downloadExcelRutaCobro } from "./api";
+import { AppCard } from "@/components/app/primitives/app-card";
+import { AppConfirmDialog } from "@/components/app/primitives/app-confirm-dialog";
+import { AppContainer } from "@/components/app/primitives/app-container";
+import { AppDataTable } from "@/components/app/table/app-data-table";
+import {
+  normalizeAppPayload,
+  useAppConfirmHandler,
+  useAppDisclosure,
+  useAppStateHandlers,
+  useAppTableHandlers,
+} from "@/components/app/handlers";
 
 import { getApiErrorMessageAxios } from "@/utils/getApiAxiosMessage";
-import { getEstadoBadgeColorRutaList } from "./_Utils/utilsBadge";
-import { getEstadoIconRutaList } from "./_Utils/getEstadoIconRutaList";
-import { AdvancedDialogCRM } from "../_Utils/components/AdvancedDialogCrm/AdvancedDialogCRM";
-import { formattShortFecha } from "@/utils/formattFechas";
-import MiniPerfilClienteCard from "./_subcomponents/MiniPerfilClienteCard";
-import { CRM } from "@/hooks/indexCalls";
+import { downloadExcelRutaCobro } from "./api";
+import { EstadoRuta, type Ruta } from "../features/rutas/rutas.interfaces";
+import {
+  useCloseRuta,
+  useDeleteRuta,
+  useGetRutas,
+} from "../CrmHooks/hooks/use-rutas/use-rutas";
+import type { QueryRutasDto } from "../CrmHooks/hooks/use-rutas/Qk";
+import { useGetUsersToSelect } from "../CrmHooks/hooks/useUsuarios/use-usuers";
+import {
+  RutasListFilters,
+  RutasListFiltersState,
+} from "./_components/regists/rutas-list-filters";
+import {
+  INITIAL_RUTAS_LIST_COLUMN_VISIBILITY,
+  RUTAS_LIST_PAGE_SIZE_OPTIONS,
+} from "./_components/regists/rutas_list_consts_";
+import { AppOption } from "../CrmCustomers/customer-table.constants";
+import { createRutasListColumns } from "./_components/regists/rutas-list.columns";
+import { RutasDetailDialog } from "./_components/regists/rutas-detail-dialog";
+
+type RutasResponse = {
+  data: Ruta[];
+  meta: {
+    currentPage: number;
+    pageCount: number;
+    pageSize: number;
+    totalCount: number;
+  };
+};
+
+function normalizeRutasResponse(raw: unknown): RutasResponse {
+  if (
+    raw &&
+    typeof raw === "object" &&
+    Array.isArray((raw as any).data) &&
+    (raw as any).meta
+  ) {
+    return raw as RutasResponse;
+  }
+
+  if (Array.isArray(raw)) {
+    return {
+      data: raw as Ruta[],
+      meta: {
+        currentPage: 1,
+        pageCount: 1,
+        pageSize: raw.length || 10,
+        totalCount: raw.length,
+      },
+    };
+  }
+
+  return {
+    data: [],
+    meta: {
+      currentPage: 1,
+      pageCount: 1,
+      pageSize: 10,
+      totalCount: 0,
+    },
+  };
+}
 
 export function RutasCobroList() {
-  const [searchRuta, setSearchRuta] = useState("");
-  const [selectedRuta, setSelectedRuta] = useState<Ruta | null>(null);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [rutaToDelete, setRutaToDelete] = useState<number | null>(null);
+  const filters = useAppStateHandlers<RutasListFiltersState>({
+    search: "",
+    serverSearch: "",
+    estadoRuta: "TODOS",
+    cobradorId: null,
+  });
 
-  const [rutaClose, setRutaClose] = useState<number | null>(null);
-  const [openCloseRuta, setOpenCloseRuta] = useState(false);
+  const table = useAppTableHandlers({
+    initialPageIndex: 0,
+    initialPageSize: 10,
+    initialDensity: "xs",
+    initialColumnVisibility: INITIAL_RUTAS_LIST_COLUMN_VISIBILITY,
+  });
 
-  const { useApiQuery: useCrmQuery } = CRM;
-  const { useApiMutation: useCrmMutations } = CRM;
+  const detailDialog = useAppDisclosure();
+  const deleteDialog = useAppConfirmHandler<Ruta>();
+  const closeDialog = useAppConfirmHandler<Ruta>();
 
-  //API CALLS
-  const {
-    data: rutasRes,
-    isFetching: isLoadingRutas,
-    refetch: fetchRutas,
-    error: rutasError,
-    isError: isErrorRutas,
-  } = useCrmQuery<PagedResponse<Ruta>>(
-    ["rutas"],
-    "/ruta-cobro/get-rutas-cobros",
-    undefined,
-    {
-      initialData: { items: [], total: 0 }, // ← importante
-      retry: 1,
-    }
+  const [selectedRuta, setSelectedRuta] = React.useState<Ruta | null>(null);
+
+  const queryDto: QueryRutasDto = React.useMemo(
+    () =>
+      normalizeAppPayload(
+        {
+          page: table.pagination.pageIndex + 1,
+          limit: table.pagination.pageSize,
+          nombreRuta: filters.state.serverSearch || undefined,
+          cobrador: filters.state.cobradorId
+            ? Number(filters.state.cobradorId)
+            : undefined,
+          estado:
+            filters.state.estadoRuta && filters.state.estadoRuta !== "TODOS"
+              ? (filters.state.estadoRuta as EstadoRuta)
+              : undefined,
+        },
+        {
+          removeUndefined: true,
+          emptyStringToUndefined: true,
+        },
+      ) as QueryRutasDto,
+    [
+      table.pagination.pageIndex,
+      table.pagination.pageSize,
+      filters.state.serverSearch,
+      filters.state.cobradorId,
+      filters.state.estadoRuta,
+    ],
   );
 
-  const list = rutasRes?.items ?? [];
-
-  const closeRuta = useCrmMutations<void, void>(
-    "patch",
-    `/ruta-cobro/close-one-ruta/${rutaClose}`
+  const rutasQuery = useGetRutas(queryDto);
+  const rutasResponse = React.useMemo(
+    () => normalizeRutasResponse(rutasQuery.data),
+    [rutasQuery.data],
   );
 
-  const deleteRuta = useCrmMutations<void, void>(
-    "delete",
-    rutaToDelete
-      ? `/ruta-cobro/delete-one-ruta/${rutaToDelete}`
-      : "/ruta-cobro/delete-one-ruta"
+  const rutas = rutasResponse.data;
+  const meta = rutasResponse.meta;
+
+  const { data: rawUsers = [] } = useGetUsersToSelect();
+
+  const closeRutaMutation = useCloseRuta(closeDialog.target?.id ?? 0);
+  const deleteRutaMutation = useDeleteRuta(deleteDialog.target?.id ?? 0);
+
+  const cobradorOptions = React.useMemo<AppOption[]>(
+    () =>
+      rawUsers.map((user) => ({
+        value: String(user.id),
+        label: user.nombre,
+      })),
+    [rawUsers],
   );
 
-  const handleViewRuta = (ruta: Ruta) => {
-    setSelectedRuta(ruta);
-    setIsViewDialogOpen(true);
-  };
+  const handleViewRuta = React.useCallback(
+    (ruta: Ruta) => {
+      setSelectedRuta(ruta);
+      detailDialog.open();
+    },
+    [detailDialog],
+  );
 
-  const handleDeleteClick = (rutaId: number) => {
-    setRutaToDelete(rutaId);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleCloseRuta = (rutaId: number) => {
-    setRutaClose(rutaId);
-    setOpenCloseRuta(true);
-  };
-
-  const handleCloseRutaCobro = async () => {
-    if (!rutaClose) {
-      toast.info("Seleccione una ruta a cerrar");
-      return;
-    }
+  const handleDownloadExcelRutaCobro = React.useCallback(async (ruta: Ruta) => {
     try {
-      await closeRuta.mutateAsync();
-      toast.success("Ruta de cobro cerrada exitosamente");
-      await fetchRutas();
-      setRutaClose(null);
-      setOpenCloseRuta(false);
-    } catch (error) {
-      console.log("Error generado en close ruta: ", error);
-      toast.error(getApiErrorMessageAxios(error));
-      return;
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!rutaToDelete) {
-      toast.warning("Ruta para eliminar no válida");
-      return;
-    }
-    try {
-      await deleteRuta.mutateAsync();
-      toast.success("Ruta eliminada correctamente");
-      await fetchRutas?.();
-      setRutaToDelete(null);
-      setIsDeleteDialogOpen(false);
-    } catch (error) {
-      console.log("El error generado al eliminar ruta es: ", error);
-      toast.error(getApiErrorMessageAxios(error));
-    }
-  };
-
-  //eliminacion
-  const isDeleting = deleteRuta.isPending;
-  const hasErrorDeleting = deleteRuta.isError;
-  const errorDeleting = deleteRuta.error;
-  //cerrando
-  const isClosing = closeRuta.isPending;
-  const hasErrorClosingRutas = closeRuta.isError;
-  const errorClosingRuta = closeRuta.error;
-
-  const handleDownloadExcelRutaCobro = async (rutaId: number) => {
-    try {
-      const response = await downloadExcelRutaCobro(rutaId);
-
+      const response = await downloadExcelRutaCobro(ruta.id);
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
+
       link.href = url;
-      link.setAttribute("download", `ruta_${rutaId}.xlsx`);
+      link.setAttribute("download", `ruta_${ruta.id}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
 
-      toast.success("¡Descarga exitosa!");
+      toast.success("Descarga exitosa");
     } catch (error) {
-      toast.error(getApiErrorMessageAxios(error));
       console.error(error);
+      toast.error(getApiErrorMessageAxios(error));
     }
-  };
+  }, []);
 
-  const filteredRutas = list.filter(
-    (ruta) =>
-      ruta.nombreRuta.toLowerCase().includes(searchRuta.toLowerCase()) ||
-      (ruta.cobrador &&
-        `${ruta.cobrador.nombre} ${ruta.cobrador.apellidos ?? ""}`
-          .toLowerCase()
-          .includes(searchRuta.toLowerCase())) ||
-      ruta.observaciones?.toLowerCase().includes(searchRuta.toLowerCase())
+  const handleDeleteRuta = React.useCallback(async () => {
+    await deleteDialog.confirm(async () => {
+      await toast.promise(deleteRutaMutation.mutateAsync(), {
+        loading: "Eliminando ruta...",
+        success: () => "Registro eliminado",
+        error: (error) => getApiErrorMessageAxios(error),
+      });
+    });
+  }, [deleteDialog, deleteRutaMutation]);
+
+  const handleCloseRuta = React.useCallback(async () => {
+    await closeDialog.confirm(async () => {
+      await toast.promise(closeRutaMutation.mutateAsync(), {
+        loading: "Cerrando ruta...",
+        success: () => "Ruta cerrada",
+        error: (error) => getApiErrorMessageAxios(error),
+      });
+    });
+  }, [closeDialog, closeRutaMutation]);
+
+  const columns = React.useMemo(
+    () =>
+      createRutasListColumns({
+        onView: handleViewRuta,
+        onDelete: deleteDialog.open,
+        onClose: closeDialog.open,
+        onDownloadExcel: handleDownloadExcelRutaCobro,
+      }),
+    [
+      handleViewRuta,
+      deleteDialog.open,
+      closeDialog.open,
+      handleDownloadExcelRutaCobro,
+    ],
   );
 
-  //FALLBACKS ERRORS
-  {
-    isErrorRutas && (
-      <Alert variant="destructive" className="mt-2">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error al cargar rutas</AlertTitle>
-        <AlertDescription>
-          {getApiErrorMessageAxios(rutasError)}
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  const resetPage = () => {
+    table.resetPage();
+  };
 
-  {
-    hasErrorDeleting && (
-      <Alert variant="destructive" className="mt-2">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error al cargar rutas</AlertTitle>
-        <AlertDescription>
-          {getApiErrorMessageAxios(errorDeleting)}
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  const handleSearchChange = (value: string) => {
+    filters.setField("search", value);
+  };
 
-  {
-    hasErrorClosingRutas && (
-      <Alert variant="destructive" className="mt-2">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error al cargar rutas</AlertTitle>
-        <AlertDescription>
-          {getApiErrorMessageAxios(errorClosingRuta)}
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  const handleSearchDebouncedChange = (value: string) => {
+    filters.setField("serverSearch", value);
+    resetPage();
+  };
+
+  const handleEstadoChange = (value: string | null) => {
+    filters.setField("estadoRuta", value ?? "TODOS");
+    resetPage();
+  };
+
+  const handleCobradorChange = (value: string | null) => {
+    filters.setField("cobradorId", value);
+    resetPage();
+  };
+
+  const handleClearFilters = () => {
+    filters.patch({
+      search: "",
+      serverSearch: "",
+      estadoRuta: "TODOS",
+      cobradorId: null,
+    });
+
+    resetPage();
+  };
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="relative w-full sm:w-auto">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar rutas..."
-              className="pl-8 w-full sm:w-[250px]"
-              value={searchRuta}
-              onChange={(e) => setSearchRuta(e.target.value)}
+    <>
+      <AppContainer size="full" paddingY="none" paddingX="none">
+        <div className="space-y-3">
+          <RutasListFilters
+            filters={filters.state}
+            cobradorOptions={cobradorOptions}
+            isFetching={rutasQuery.isFetching}
+            onSearchChange={handleSearchChange}
+            onSearchDebouncedChange={handleSearchDebouncedChange}
+            onEstadoChange={handleEstadoChange}
+            onCobradorChange={handleCobradorChange}
+            onClearFilters={handleClearFilters}
+          />
+
+          <AppCard variant="outline" size="xs" radius="md">
+            <AppDataTable<Ruta>
+              data={rutas}
+              columns={columns}
+              getRowId={(row) => String(row.id)}
+              isLoading={rutasQuery.isLoading}
+              isFetching={rutasQuery.isFetching}
+              error={rutasQuery.error}
+              onRetry={() => rutasQuery.refetch()}
+              paginationMode="server"
+              pagination={table.getPaginationConfig({
+                totalRows: meta.totalCount,
+                pageSizeOptions: RUTAS_LIST_PAGE_SIZE_OPTIONS,
+              })}
+              {...table.getDataTableStateProps()}
+              enableRowSelection={false}
+              enableColumnVisibility
+              enableColumnPinning={false}
+              enableVirtualization
+              stickyHeader
+              density={table.density}
+              maxHeight="68vh"
+              emptyTitle="Sin rutas"
+              emptyDescription={
+                filters.state.serverSearch
+                  ? `No se encontraron resultados para "${filters.state.serverSearch}".`
+                  : "No hay rutas de cobro registradas."
+              }
             />
-          </div>
+          </AppCard>
         </div>
-      </CardHeader>
-      <CardContent>
-        {isLoadingRutas ? (
-          <RutasSkeleton />
-        ) : filteredRutas.length === 0 ? (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertTitle>Sin rutas</AlertTitle>
-            <AlertDescription>
-              No hay rutas de cobro registradas.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <div className="rounded-md border overflow-hidden">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Cobrador
-                    </TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Clientes
-                    </TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Estado
-                    </TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRutas.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={5}
-                        className="text-center text-muted-foreground py-6"
-                      >
-                        No se encontraron resultados para "{searchRuta}"
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredRutas.map((ruta) => (
-                      <TableRow key={ruta.id} className="group">
-                        <TableCell>
-                          <div className="text-xs font-medium">
-                            {ruta.nombreRuta}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Creada: {formattShortFecha(ruta.fechaCreacion)}
-                          </div>
-                          <div className="md:hidden mt-1">
-                            <Badge
-                              className={`${getEstadoBadgeColorRutaList(
-                                ruta.estadoRuta
-                              )} flex items-center text-xs`}
-                            >
-                              {getEstadoIconRutaList(ruta.estadoRuta)}
-                              {ruta.estadoRuta}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {ruta.cobrador ? (
-                            <div className="flex items-center gap-1">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-xs">
-                                {ruta.cobrador.nombre}{" "}
-                                {ruta.cobrador.apellidos || ""}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">
-                              Sin asignar
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <div className="flex items-center gap-1">
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                            <span>{ruta.clientes.length}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <Badge
-                            className={`${getEstadoBadgeColorRutaList(
-                              ruta.estadoRuta
-                            )} flex items-center`}
-                          >
-                            {getEstadoIconRutaList(ruta.estadoRuta)}
-                            {ruta.estadoRuta}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                >
-                                  <MoreVertical className="h-4 w-4" />
-                                  <span className="sr-only">Abrir menú</span>
-                                </Button>
-                              </DropdownMenuTrigger>
+      </AppContainer>
 
-                              <DropdownMenuContent align="end">
-                                {/* Ver detalles */}
-                                <DropdownMenuItem
-                                  className="flex items-center gap-2"
-                                  onClick={() => handleViewRuta(ruta)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                  <span>Ver detalles</span>
-                                </DropdownMenuItem>
-
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleDownloadExcelRutaCobro(ruta.id)
-                                  }
-                                  className="flex items-center gap-2"
-                                >
-                                  <Printer className="h-4 w-4" />
-                                  <span>Imprimir ruta</span>
-                                </DropdownMenuItem>
-
-                                {/* Opciones visibles solo si la ruta no está cerrada */}
-                                {ruta.estadoRuta !== EstadoRuta.CERRADO && (
-                                  <>
-                                    <DropdownMenuItem
-                                      className="flex items-center gap-2"
-                                      asChild
-                                    >
-                                      <Link
-                                        to={`/crm/cobros-en-ruta/${ruta.id}`}
-                                      >
-                                        <Play className="h-4 w-4" />
-                                        <span>Iniciar Ruta</span>
-                                      </Link>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem
-                                      className="flex items-center gap-2"
-                                      asChild
-                                    >
-                                      <Link
-                                        to={`/crm/rutas-cobro/edit/${ruta.id}`}
-                                      >
-                                        <Edit className="h-4 w-4" />
-                                        <span>Editar</span>
-                                      </Link>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem
-                                      className="flex items-center gap-2"
-                                      onClick={() => handleCloseRuta(ruta.id)}
-                                    >
-                                      <BookmarkX className="h-4 w-4" />
-                                      <span>Cerrar Ruta</span>
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-
-                                {/* Eliminar (siempre disponible) */}
-                                <DropdownMenuItem
-                                  className="flex items-center gap-2 text-destructive"
-                                  onClick={() => handleDeleteClick(ruta.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  <span>Eliminar</span>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        )}
-      </CardContent>
-
-      {/* Diálogo de detalles de ruta */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="sm:max-w-[700px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MapPinned className="h-5 w-5 text-primary dark:text-white" />
-              {selectedRuta?.nombreRuta}
-            </DialogTitle>
-            <DialogDescription>Detalles de la ruta de cobro</DialogDescription>
-          </DialogHeader>
-          {selectedRuta && (
-            <div className="py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      Información General
-                    </h3>
-                    <div className="mt-2 space-y-2 text-xs">
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          className={`${getEstadoBadgeColorRutaList(
-                            selectedRuta.estadoRuta
-                          )} flex items-center`}
-                        >
-                          {getEstadoIconRutaList(selectedRuta.estadoRuta)}
-                          {selectedRuta.estadoRuta}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-primary dark:text-white" />
-                        <span>
-                          Creada:{" "}
-                          {formattShortFecha(selectedRuta.fechaCreacion)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-primary dark:text-white" />
-                        <span>
-                          Actualizada:{" "}
-                          {formattShortFecha(selectedRuta.fechaActualizacion)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      Cobrador Asignado
-                    </h3>
-                    {selectedRuta.cobrador ? (
-                      <div className="mt-2 p-3 bg-muted rounded-md">
-                        <div className="flex items-center gap-2">
-                          <UserCheck className="h-4 w-4 text-primary dark:text-white" />
-                          <span className="text-xs">
-                            {selectedRuta.cobrador.nombre}{" "}
-                            {selectedRuta.cobrador.apellidos || ""}
-                          </span>
-                        </div>
-                        {selectedRuta.cobrador.telefono && (
-                          <div className="flex items-center gap-2 mt-1 text-sm">
-                            <Phone className="h-3.5 w-3.5 text-muted-foreground dark:text-white " />
-                            <span>{selectedRuta.cobrador.telefono}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 mt-1 text-sm">
-                          <Info className="h-3.5 w-3.5 text-muted-foreground dark:text-white" />
-                          <span>{selectedRuta.cobrador.email}</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mt-2 text-muted-foreground">
-                        No hay cobrador asignado a esta ruta
-                      </div>
-                    )}
-                  </div>
-
-                  {selectedRuta.observaciones && (
-                    <>
-                      <Separator />
-
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">
-                          Observaciones
-                        </h3>
-                        <div className="mt-2 p-3 bg-muted rounded-md text-sm">
-                          {selectedRuta.observaciones}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div className="space-y-4">
-                  <ScrollArea className="h-[300px] rounded-md border">
-                    <div className="p-4 space-y-4">
-                      {selectedRuta.clientes.length === 0 ? (
-                        <div className="text-center text-muted-foreground py-4">
-                          No hay clientes en esta ruta
-                        </div>
-                      ) : (
-                        selectedRuta.clientes.map((cliente, index) => (
-                          <MiniPerfilClienteCard
-                            cliente={cliente}
-                            key={index}
-                          />
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button onClick={() => setIsViewDialogOpen(false)}>Cerrar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <AdvancedDialogCRM
-        type="warning"
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        title="Confirmar eliminación de ruta"
-        description="¿Está seguro que desea eliminar esta ruta de cobro? Esta acción no
-              se puede deshacer."
-        confirmButton={{
-          label: "Si, continuar y eliminar ruta",
-          loading: isDeleting,
-          loadingText: "Eliminando...",
-          disabled: isDeleting,
-          onClick: () => handleConfirmDelete(),
-          variant: "destructive",
-        }}
-        cancelButton={{
-          label: "Cancelar",
-          disabled: isDeleting,
-          loadingText: "Cancelando...",
-          variant: "outline",
-        }}
+      <RutasDetailDialog
+        open={detailDialog.isOpen}
+        ruta={selectedRuta}
+        onOpenChange={detailDialog.setOpen}
       />
 
-      {/* DIALOG DE CIERRE DE RUTA */}
-      <Dialog open={openCloseRuta} onOpenChange={setOpenCloseRuta}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Confirmar Cierre de Ruta</DialogTitle>
-            <DialogDescription>
-              ¿Está seguro que desea cerrar esta ruta de cobro? Una vez cerrada,
-              ya no estará disponible para realizar más cobros.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Advertencia</AlertTitle>
-              <AlertDescription>
-                Esta acción cerrará la ruta. No se eliminarán los registros
-                históricos, pero no podrá reactivarse para cobros futuros.
-              </AlertDescription>
-            </Alert>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenCloseRuta(false)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleCloseRutaCobro}
-              disabled={isClosing}
-            >
-              {isClosing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Cerrando...
-                </>
-              ) : (
-                "Cerrar Ruta"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
+      <AppConfirmDialog
+        open={deleteDialog.isOpen}
+        onOpenChange={deleteDialog.setOpen}
+        preset="delete"
+        tone="danger"
+        title="Confirmar eliminación de ruta"
+        description="Esta acción no se puede deshacer."
+        confirmText="Sí, eliminar ruta"
+        cancelText="Cancelar"
+        loadingText="Eliminando..."
+        isLoading={deleteRutaMutation.isPending}
+        preventClose={deleteRutaMutation.isPending}
+        closeOnConfirm={false}
+        onConfirm={handleDeleteRuta}
+        size="sm"
+        footerAlign="between"
+      >
+        <p className="text-xs text-[hsl(var(--app-muted-foreground))]">
+          Ruta seleccionada:{" "}
+          <span className="font-semibold text-[hsl(var(--app-foreground))]">
+            {deleteDialog.target?.nombreRuta ?? "Sin nombre"}
+          </span>
+        </p>
+      </AppConfirmDialog>
+
+      <AppConfirmDialog
+        open={closeDialog.isOpen}
+        onOpenChange={closeDialog.setOpen}
+        preset="warning"
+        tone="warning"
+        title="Confirmar cierre de ruta"
+        description="Una vez cerrada, la ruta ya no estará disponible para realizar más cobros."
+        confirmText="Cerrar ruta"
+        cancelText="Cancelar"
+        loadingText="Cerrando..."
+        isLoading={closeRutaMutation.isPending}
+        preventClose={closeRutaMutation.isPending}
+        closeOnConfirm={false}
+        onConfirm={handleCloseRuta}
+        size="sm"
+        footerAlign="between"
+      >
+        <p className="text-xs text-[hsl(var(--app-muted-foreground))]">
+          No se eliminarán los registros históricos, pero la ruta quedará
+          cerrada.
+        </p>
+      </AppConfirmDialog>
+    </>
   );
 }

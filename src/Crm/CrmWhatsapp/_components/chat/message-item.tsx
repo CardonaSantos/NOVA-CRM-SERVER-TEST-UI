@@ -4,10 +4,7 @@ import { MessageDocument } from "./message-document";
 import { MessageAudio } from "./message-audio";
 import { Check, CheckCheck, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  WazStatus,
-  WhatsappMessage,
-} from "@/Crm/features/bot-server/cliente-whatsapp-historial/cliente-historial-chat.interface";
+import { WhatsappMessage } from "@/Crm/features/bot-server/cliente-whatsapp-historial/cliente-historial-chat.interface";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
 import utc from "dayjs/plugin/utc";
@@ -15,6 +12,7 @@ import timezone from "dayjs/plugin/timezone";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import { WazStatus } from "@/Crm/features/bot-server/clientes-whatsapp-server/clientes-whatsapp-server";
 dayjs.extend(customParseFormat);
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -25,11 +23,6 @@ dayjs.locale("es");
 interface MessageItemProps {
   message: WhatsappMessage;
 }
-
-// SENT = "SENT",
-// DELIVERED = "DELIVERED",
-// READ = "READ",
-// FAILED = "FAILED",
 
 export function MessageItem({ message }: MessageItemProps) {
   const isOutbound = message.direction === "OUTBOUND";
@@ -89,7 +82,7 @@ export function MessageItem({ message }: MessageItemProps) {
               "rounded-lg px-3 py-2 text-xs max-w-[85%] italic",
               isOutbound
                 ? "bg-primary/20 text-primary ml-auto"
-                : "bg-muted text-muted-foreground"
+                : "bg-muted text-muted-foreground",
             )}
           >
             Mensaje de tipo {message.type}
@@ -112,7 +105,7 @@ export function MessageItem({ message }: MessageItemProps) {
     <div
       className={cn(
         "flex flex-col gap-1 mb-3",
-        isOutbound ? "items-end" : "items-start"
+        isOutbound ? "items-end" : "items-start",
       )}
     >
       {renderMessageContent()}

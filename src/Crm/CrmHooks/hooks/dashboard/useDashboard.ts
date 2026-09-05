@@ -6,6 +6,7 @@ import { useCrmMutation, useCrmQuery } from "@/Crm/hooks/crmApiHooks";
 import {
   DashboardQkeys,
   InstalacionesVsDesinstalacionesQkeys,
+  tecnicoPanelQkeys,
   TicketsAsignadosQkeys,
   TicketsProcesoQkeys,
 } from "./Qk";
@@ -14,6 +15,9 @@ import { NivoBarData } from "@/Crm/_charts/bar-chart/bar-chart.interface";
 import { TicketsDashboardSoporte } from "@/Crm/CrmNewDashboard/interfaces/dashboard-interfaces";
 import { TicketAsignadoTecnico } from "@/Crm/features/dashboard/dashboard-tickets";
 import { useQueryClient } from "@tanstack/react-query";
+import { crm } from "@/Crm/API/crmApi";
+import { crm_endpoints } from "@/Crm/API/routes/endpoints";
+import { TecnicoPanelResponse } from "@/Crm/features/dashboard/panel-tecnico.types";
 
 /**
  * DATOS KPI
@@ -31,7 +35,7 @@ export function useGetDashboardData() {
       refetchOnMount: "always",
       refetchOnReconnect: "always",
       retry: 1,
-    }
+    },
   );
 }
 
@@ -52,7 +56,7 @@ export function useGetDashboardChartInstalaciones() {
       refetchOnMount: "always",
       refetchOnReconnect: "always",
       retry: 1,
-    }
+    },
   );
 }
 
@@ -73,7 +77,7 @@ export function useGetInstalacionesVsDesinstalaciones() {
       refetchOnMount: "always",
       refetchOnReconnect: "always",
       retry: 1,
-    }
+    },
   );
 }
 
@@ -93,7 +97,7 @@ export function useGetTicketProceso() {
       refetchOnMount: "always",
       refetchOnReconnect: "always",
       retry: 1,
-    }
+    },
   );
 }
 
@@ -113,10 +117,11 @@ export function useGetCobrosDashboard() {
       refetchOnMount: "always",
       refetchOnReconnect: "always",
       retry: 1,
-    }
+    },
   );
 }
 
+// TECNICOS
 // TECNICOS
 /**
  * Hook de retorno de tickets tecnico
@@ -129,12 +134,12 @@ export function useGetTicketsAsignados(tecId: number) {
     `dashboard/get-tickets-asignados/${tecId}`,
     undefined,
     {
-      staleTime: 0,
       refetchOnWindowFocus: "always",
       refetchOnMount: "always",
       refetchOnReconnect: "always",
       retry: 1,
-    }
+      enabled: tecId > 0,
+    },
   );
 }
 
@@ -155,7 +160,7 @@ export function useGetTicketDetails(ticketId: number) {
       refetchOnMount: "always",
       refetchOnReconnect: "always",
       retry: 1,
-    }
+    },
   );
 }
 
@@ -178,7 +183,7 @@ export function usePatchTicketEnProceso(ticketId: number) {
           queryKey: TicketsAsignadosQkeys.all,
         });
       },
-    }
+    },
   );
 }
 
@@ -201,6 +206,23 @@ export function usePatchTicketEnRevision(ticketId: number) {
           queryKey: TicketsAsignadosQkeys.all,
         });
       },
-    }
+    },
+  );
+}
+
+/**
+ * CONSEGUIR DATOS PARA UN PANEL DE TECNICO
+ * - no ocupa id del tecnico, el mismo envia el token por su cuenta
+ * y se dereiva ahi
+ */
+/**
+ *
+ * @param
+ * @returns
+ */
+export function useGetTecnicoPanel() {
+  return crm.useQueryApi<TecnicoPanelResponse>(
+    tecnicoPanelQkeys.all,
+    crm_endpoints.dashboard.tecnico_panel,
   );
 }

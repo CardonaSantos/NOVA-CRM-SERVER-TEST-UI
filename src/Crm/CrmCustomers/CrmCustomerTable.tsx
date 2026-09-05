@@ -1,746 +1,557 @@
 "use client";
-import { useDebounce } from "use-debounce";
-import { useEffect, useState, useRef } from "react";
-import {
-  ColumnDef,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Link, useSearchParams } from "react-router-dom";
-import { ChevronDown, ChevronUp, Edit, X } from "lucide-react";
-import { motion } from "framer-motion";
-import { ClienteDto } from "./CustomerTable";
-import axios from "axios";
-import { toast } from "sonner";
+import { useEffect, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
 import utc from "dayjs/plugin/utc";
 import localizedFormat from "dayjs/plugin/localizedFormat";
-import ReactSelectComponent from "react-select";
-import { FacturacionZona } from "../features/zonas-facturacion/FacturacionZonaTypes";
+import { toast } from "sonner";
 
-import { Label } from "@/components/ui/label";
-import { useWindowScrollPosition } from "../Utils/useWindow";
-import { ClientTableSkeleton } from "./SkeletonTable";
-import { getEstadoColorText, returnStatusClient } from "../Utils/Utils2";
 import { PageTransitionCrm } from "@/components/Layout/page-transition";
+import { AppBadge } from "@/components/app/primitives/app-badge";
+import { AppCard } from "@/components/app/primitives/app-card";
+import { AppContainer } from "@/components/app/primitives/app-container";
+import { AppInline } from "@/components/app/primitives/app-inline";
+import { AppStack } from "@/components/app/primitives/app-stack";
+import { AppDataTable } from "@/components/app/table/app-data-table";
+import {
+  normalizeAppPayload,
+  useAppDisclosure,
+  useAppStateHandlers,
+  useAppTableHandlers,
+} from "@/components/app/handlers";
+
+import { getApiErrorMessageAxios } from "@/utils/getApiAxiosMessage";
+import { handleOpenWhatsapp } from "@/Crm/_Utils/helpersText";
+import { useGetSectores } from "../CrmHooks/hooks/Sectores/useGetSectores";
+import { useGetMunicipios } from "../CrmHooks/hooks/Municipios/useGetMunicipios";
+import { useGetDepartamentos } from "../CrmHooks/hooks/Departamentos/useGetDepartamentos";
+import { useGetZonasFacturacion } from "../CrmHooks/hooks/Zonas-facturacion/useGetZonasFacturacion";
+import { useGetUsersToSelect } from "../CrmHooks/hooks/useUsuarios/use-usuers";
+import {
+  GetCustomersQueryDto,
+  useGetCustomersInTable,
+} from "../CrmHooks/hooks/use-get-customers-table/useGetCustomerTable";
+import {
+  downloadFile,
+  FiltersProps,
+  useGenerateHistorialPagos,
+  useGenerateInfoReport,
+  useGenerateReportCobranza,
+} from "../CrmHooks/hooks/use-reports/use-reports";
+
+import type { ClienteTableDto } from "./CustomerTable";
+
+import {
+  CustomerReportsCobranzaDialog,
+  ReportCobranzaFiltersState,
+} from "./_components/customer-reports-cobranza-dialog";
+import {
+  AppOption,
+  CUSTOMER_SORT_FIELD_MAP,
+  INITIAL_CUSTOMER_COLUMN_VISIBILITY,
+  PAGE_SIZE_OPTIONS,
+} from "./customer-table.constants";
+import {
+  CustomerFiltersState,
+  CustomerTableFilters,
+} from "./_components/customer-table-filters";
+import { createClienteTableColumns } from "./_components/customer-table.columns";
+import { CustomerBulkActions } from "./_components/customer-bulk-actions";
 
 dayjs.extend(utc);
 dayjs.extend(localizedFormat);
 dayjs.locale("es");
 
-const VITE_CRM_API_URL = import.meta.env.VITE_CRM_API_URL;
+function toNumberOrUndefined(value: string | null) {
+  if (!value) return undefined;
 
-function parseIp(ipString: string) {
-  const parts = ipString.split(".");
-  const octets = parts.map((p) => parseInt(p, 10));
-  while (octets.length < 4) {
-    octets.push(0);
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function toDateOrNull(value?: string | null) {
+  if (!value) return null;
+
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed.toDate() : null;
+}
+
+function setParam(
+  params: URLSearchParams,
+  key: string,
+  value: string | number | null | undefined,
+) {
+  if (value === null || value === undefined || value === "") {
+    params.delete(key);
+    return;
   }
-  return octets;
-}
 
-function compareIp(a: string, b: string) {
-  const octA = parseIp(a);
-  const octB = parseIp(b);
-
-  for (let i = 0; i < 4; i++) {
-    if (octA[i] < octB[i]) return -1;
-    if (octA[i] > octB[i]) return 1;
-  }
-  return 0;
-}
-
-// **Definir columnas de la tabla**
-const columns: ColumnDef<ClienteDto>[] = [
-  { accessorKey: "id", header: "ID" },
-  { accessorKey: "nombreCompleto", header: "Nombre" },
-  { accessorKey: "telefono", header: "Teléfono" },
-  {
-    accessorKey: "direccionIp",
-    header: "IP",
-    sortingFn: (rowA, rowB, columnId) => {
-      const ipA = rowA.getValue(columnId) as string;
-      const ipB = rowB.getValue(columnId) as string;
-      return compareIp(ipA, ipB);
-    },
-  },
-  { accessorKey: "creadoEn", header: "Plan Internet" },
-  { accessorKey: "facturacionZona", header: "Zona Facturación" },
-  { accessorKey: "estadoCliente", header: "Estado cliente" },
-];
-
-interface OptionSelect {
-  value: string;
-  label: string;
-}
-
-interface Departamentos {
-  id: number;
-  nombre: string;
-}
-
-interface Municipios {
-  id: number;
-  nombre: string;
-}
-
-interface OptionSelected {
-  value: string;
-  label: string;
-}
-
-interface Sector {
-  id: number;
-  nombre: string;
-  clientesCount: number;
-}
-
-const estadosConDescripcion = [
-  { value: "ACTIVO", label: "ACTIVO " },
-  { value: "PENDIENTE_ACTIVO", label: "PENDIENTE ACTIVO " },
-  { value: "PAGO_PENDIENTE", label: "PAGO PENDIENTE " },
-  { value: "MOROSO", label: "MOROSO " },
-  { value: "ATRASADO", label: "ATRASADO " },
-  { value: "SUSPENDIDO", label: "SUSPENDIDO " },
-  { value: "DESINSTALADO", label: "DESINSTALADO" },
-  { value: "EN_INSTALACION", label: "EN INSTALACION" },
-];
-
-interface Summary {
-  activo: number;
-  moroso: number;
-  pendiente_activo: number;
-  atrasado: number;
+  params.set(key, String(value));
 }
 
 export default function ClientesTable() {
-  const [searchParam] = useSearchParams();
-  const estadoQuery = searchParam.get("estado") ?? "";
-  const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [isSearching, setIsSearching] = useState<boolean>(false);
-  const [summary, setSummary] = useState<Summary>({
+  const initialFilters = useMemo<CustomerFiltersState>(
+    () => ({
+      search: searchParams.get("q") ?? "",
+      serverSearch: searchParams.get("q") ?? "",
+      departamentoId: searchParams.get("dep") ?? "8",
+      municipioId: searchParams.get("muni"),
+      sectorId: searchParams.get("sec"),
+      zonaFacturacionId: searchParams.get("zona"),
+      estado: searchParams.get("est") ?? searchParams.get("estado"),
+      estadoCobranza:
+        searchParams.get("estCobranza") ?? searchParams.get("estadoCobranza"),
+      sort: null,
+    }),
+    [],
+  );
+
+  const filters = useAppStateHandlers<CustomerFiltersState>(initialFilters);
+
+  const table = useAppTableHandlers({
+    initialPageIndex: Number(searchParams.get("p"))
+      ? Number(searchParams.get("p")) - 1
+      : 0,
+    initialPageSize: Number(searchParams.get("l")) || 10,
+    initialColumnVisibility: INITIAL_CUSTOMER_COLUMN_VISIBILITY,
+    initialDensity: "xs",
+  });
+
+  const reportDialog = useAppDisclosure();
+
+  const reportFilters = useAppStateHandlers<ReportCobranzaFiltersState>({
+    paidRange: { start: null, end: null },
+    generatedRange: { start: null, end: null },
+    userId: null,
+    estados: [],
+  });
+
+  const { data: departamentos = [] } = useGetDepartamentos();
+  const { data: sectores = [] } = useGetSectores();
+  const { data: zonasFacturacion = [] } = useGetZonasFacturacion();
+  const { data: rawUsers = [] } = useGetUsersToSelect();
+
+  const { data: municipios = [] } = useGetMunicipios(
+    filters.state.departamentoId ? Number(filters.state.departamentoId) : 0,
+  );
+
+  const exportInfoMutation = useGenerateInfoReport();
+  const exportPagosMutation = useGenerateHistorialPagos();
+  const createReportCobranza = useGenerateReportCobranza();
+
+  const optionsDepartamentos = useMemo<AppOption[]>(
+    () =>
+      departamentos.map((departamento) => ({
+        value: String(departamento.id),
+        label: departamento.nombre,
+      })),
+    [departamentos],
+  );
+
+  const optionsMunicipios = useMemo<AppOption[]>(
+    () =>
+      municipios.map((municipio) => ({
+        value: String(municipio.id),
+        label: municipio.nombre,
+      })),
+    [municipios],
+  );
+
+  const optionsSectores = useMemo<AppOption[]>(
+    () =>
+      sectores.map((sector) => ({
+        value: String(sector.id),
+        label: `${sector.nombre} (${sector.clientesCount ?? 0})`,
+      })),
+    [sectores],
+  );
+
+  const optionsZonasFacturacion = useMemo<AppOption[]>(
+    () =>
+      zonasFacturacion
+        .slice()
+        .sort((a, b) => {
+          const first = Number(a.nombre.match(/\d+/)?.[0] ?? "0");
+          const second = Number(b.nombre.match(/\d+/)?.[0] ?? "0");
+          return first - second;
+        })
+        .map((zona) => ({
+          value: String(zona.id),
+          label: `${zona.nombre} (${zona.clientesCount})`,
+        })),
+    [zonasFacturacion],
+  );
+
+  const userOptions = useMemo<AppOption[]>(
+    () =>
+      rawUsers.map((user) => ({
+        value: String(user.id),
+        label: user.nombre,
+      })),
+    [rawUsers],
+  );
+
+  const queryDto: GetCustomersQueryDto = useMemo(
+    () =>
+      normalizeAppPayload(
+        {
+          page: table.pagination.pageIndex + 1,
+          limite: table.pagination.pageSize,
+          paramSearch: filters.state.serverSearch || undefined,
+          depaSelected: toNumberOrUndefined(filters.state.departamentoId),
+          muniSelected: toNumberOrUndefined(filters.state.municipioId),
+          sectorSelected: toNumberOrUndefined(filters.state.sectorId),
+          zonasFacturacionSelected: toNumberOrUndefined(
+            filters.state.zonaFacturacionId,
+          ),
+          estadoSelected: filters.state.estado || undefined,
+          estadoCobranzaSelected: filters.state.estadoCobranza || undefined,
+        },
+        {
+          removeUndefined: true,
+          emptyStringToUndefined: true,
+        },
+      ) as GetCustomersQueryDto,
+    [
+      table.pagination.pageIndex,
+      table.pagination.pageSize,
+      filters.state.serverSearch,
+      filters.state.departamentoId,
+      filters.state.municipioId,
+      filters.state.sectorId,
+      filters.state.zonaFacturacionId,
+      filters.state.estado,
+      filters.state.estadoCobranza,
+    ],
+  );
+
+  const customersQuery = useGetCustomersInTable(queryDto);
+
+  const responseTable = customersQuery.data;
+  const clientes = responseTable?.data ?? [];
+  const totalCount = responseTable?.totalCount ?? 0;
+
+  const summary = responseTable?.summary ?? {
     activo: 0,
     atrasado: 0,
     moroso: 0,
     pendiente_activo: 0,
-  });
+  };
 
-  // PAGINACIÓN
-  const [totalCount, setTotalCount] = useState(0);
-  const [filter, setFilter] = useState("");
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-  const [sorting, setSorting] = useState<any>([]);
-  const [clientes, setClientes] = useState<ClienteDto[]>([]);
-
-  const [departamentos, setDepartamentos] = useState<Departamentos[]>([]);
-  const [municipios, setMunicipios] = useState<Municipios[]>([]);
-
-  const [depaSelected, setDepaSelected] = useState<string | null>("8");
-  const [muniSelected, setMuniSelected] = useState<string | null>(null);
-
-  const [sectores, setSectores] = useState<Sector[]>([]);
-  const [sectorSelected, setSectorSelected] = useState<string | null>(null);
-  const [estadoSelected, setEstadoSelected] = useState<string | null>(
-    estadoQuery
+  const selectedIds = useMemo(
+    () => Object.keys(table.rowSelection),
+    [table.rowSelection],
   );
 
-  const [zonasFacturacion, setZonasFacturacion] = useState<FacturacionZona[]>(
-    []
+  const isExportingSelected =
+    exportInfoMutation.isPending || exportPagosMutation.isPending;
+
+  const columns = useMemo(
+    () =>
+      createClienteTableColumns({
+        onCopyPhone: async (telefono) => {
+          await navigator.clipboard.writeText(telefono);
+          toast.success("Teléfono copiado");
+        },
+        onOpenWhatsapp: (telefono) => {
+          const url = handleOpenWhatsapp(telefono);
+          window.open(url, "_blank", "noopener,noreferrer");
+        },
+        onCallPhone: (telefono) => {
+          window.location.href = `tel:${telefono}`;
+        },
+        onEditCliente: (clienteId) => {
+          navigate(`/crm/cliente-edicion/${clienteId}`);
+        },
+      }),
+    [navigate],
   );
-  const [zonasFacturacionSelected, setZonasFacturacionSelected] = useState<
-    string | null
-  >(null);
-
-  const atBottom = useWindowScrollPosition();
-
-  const handleToggle = () => {
-    if (atBottom) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } else {
-      window.scrollTo({
-        top: document.documentElement.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  };
-
-  const handleSelectDepartamento = (selectedOption: OptionSelected | null) => {
-    setDepaSelected(selectedOption ? selectedOption.value : null);
-  };
-
-  const handleSelectMunicipio = (selectedOption: OptionSelected | null) => {
-    setMuniSelected(selectedOption ? selectedOption.value : null);
-  };
-
-  const optionsDepartamentos: OptionSelected[] = departamentos.map((depa) => ({
-    value: depa.id.toString(),
-    label: depa.nombre,
-  }));
-
-  const optionsMunis: OptionSelected[] = municipios.map((muni) => ({
-    value: muni.id.toString(),
-    label: muni.nombre,
-  }));
-
-  const getDepartamentos = async () => {
-    try {
-      const response = await axios.get(
-        `${VITE_CRM_API_URL}/location/get-all-departamentos`
-      );
-
-      if (response.status === 200) {
-        setDepartamentos(response.data);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const getMunicipios = async () => {
-    try {
-      const response = await axios.get(
-        `${VITE_CRM_API_URL}/location/get-municipio/${Number(depaSelected)}`
-      );
-
-      if (response.status === 200) {
-        setMunicipios(response.data);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const handleSelectEstado = (selectedOption: OptionSelected | null) => {
-    setEstadoSelected(selectedOption ? selectedOption.value : null);
-  };
-
-  const getSectores = async () => {
-    try {
-      const response = await axios.get(
-        `${VITE_CRM_API_URL}/sector/sectores-to-select`
-      );
-
-      if (response.status === 200) {
-        setSectores(response.data);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const getFacturacionZona = async () => {
-    try {
-      const response = await axios.get(
-        `${VITE_CRM_API_URL}/facturacion-zona/get-zonas-facturacion-to-customer`
-      );
-
-      if (response.status === 200) {
-        setZonasFacturacion(response.data);
-      }
-    } catch (error) {
-      console.log(error);
-      toast.info("Error al conseguir servicios wifi");
-    }
-  };
 
   useEffect(() => {
-    getFacturacionZona();
-    getDepartamentos();
-    getSectores();
-  }, []);
+    const params = new URLSearchParams();
 
-  useEffect(() => {
-    if (depaSelected) {
-      getMunicipios();
-    } else {
-      setMunicipios([]);
-      setMuniSelected(null);
-    }
-  }, [depaSelected]);
+    setParam(params, "q", filters.state.serverSearch);
+    setParam(params, "dep", filters.state.departamentoId);
+    setParam(params, "muni", filters.state.municipioId);
+    setParam(params, "sec", filters.state.sectorId);
+    setParam(params, "zona", filters.state.zonaFacturacionId);
+    setParam(params, "est", filters.state.estado);
+    setParam(params, "estCobranza", filters.state.estadoCobranza);
+    setParam(params, "p", table.pagination.pageIndex + 1);
+    setParam(params, "l", table.pagination.pageSize);
 
-  const optionsZonasFacturacion: OptionSelected[] = zonasFacturacion
-    .sort((a, b) => {
-      const numA = parseInt(a.nombre.match(/\d+/)?.[0] || "0");
-      const numB = parseInt(b.nombre.match(/\d+/)?.[0] || "0");
-      return numA - numB;
-    })
-    .map((zona) => ({
-      value: zona.id.toString(),
-      label: `${zona.nombre} Clientes: (${zona.clientesCount})`,
-    }));
-
-  const optionsSectores: OptionSelected[] = sectores.map((sector) => ({
-    value: sector.id.toString(),
-    label: `${sector.nombre}  Clientes: (${sector.clientesCount})`,
-  }));
-
-  const handleSelectSector = (selectedOption: OptionSelected | null) => {
-    setSectorSelected(selectedOption ? selectedOption.value : null);
-  };
-
-  const handleSelectZonaFacturacion = (
-    selectedOption: OptionSelected | null
-  ) => {
-    setZonasFacturacionSelected(selectedOption ? selectedOption.value : null);
-  };
-
-  const sortOptions: OptionSelect[] = [
-    { label: "Ordenar por IP (asc)", value: "ip-asc" },
-    { label: "Ordenar por IP (desc)", value: "ip-desc" },
-    { label: "Ordenar por Nombre (asc)", value: "nombre-asc" },
-    { label: "Ordenar por Nombre (desc)", value: "nombre-desc" },
-    {
-      label: "Ordenar por Fecha Creación (asc)",
-      value: "fechapago-asc",
-    },
-    {
-      label: "Ordenar por Fecha Creación (desc)",
-      value: "fechapago-desc",
-    },
-  ];
-
-  const fieldMapping: Record<string, keyof ClienteDto> = {
-    ip: "direccionIp",
-    nombre: "nombreCompleto",
-    fechapago: "creadoEn",
-  };
-
-  // 🔹 Búsqueda con debounce (lo que se manda al backend)
-  const [debouncedQuery] = useDebounce(filter, 500);
-
-  const getClientes = async () => {
-    try {
-      setIsSearching(true);
-      const response = await axios.get(
-        `${VITE_CRM_API_URL}/internet-customer/customer-to-table`,
-        {
-          params: {
-            page: pagination.pageIndex + 1, // API expects 1-based index
-            limite: pagination.pageSize,
-            paramSearch: debouncedQuery, // usar el debounced
-            zonasFacturacionSelected: zonasFacturacionSelected,
-            muniSelected: muniSelected,
-            depaSelected: depaSelected,
-            sectorSelected: sectorSelected,
-            estadoSelected: estadoSelected,
-          },
-        }
-      );
-      console.log("El responda data es: ", response.data);
-
-      if (response.status === 200) {
-        setClientes(response.data.data);
-        setTotalCount(response.data.totalCount);
-        setSummary(response.data.summary);
-      }
-    } catch (error) {
-      console.log(error);
-      toast.error("Error al conseguir datos de clientes");
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // 🔹 Cuando cambie búsqueda o filtros → siempre regresar a página 1
-  useEffect(() => {
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setSearchParams(params, { replace: true });
   }, [
-    debouncedQuery,
-    zonasFacturacionSelected,
-    muniSelected,
-    depaSelected,
-    sectorSelected,
-    estadoSelected,
+    filters.state.serverSearch,
+    filters.state.departamentoId,
+    filters.state.municipioId,
+    filters.state.sectorId,
+    filters.state.zonaFacturacionId,
+    filters.state.estado,
+    filters.state.estadoCobranza,
+    table.pagination.pageIndex,
+    table.pagination.pageSize,
+    setSearchParams,
   ]);
 
-  // 🔹 Llamar al backend cuando cambien página, tamaño, filtros o búsqueda
-  useEffect(() => {
-    getClientes();
-  }, [
-    pagination.pageIndex,
-    pagination.pageSize,
-    zonasFacturacionSelected,
-    muniSelected,
-    depaSelected,
-    sectorSelected,
-    debouncedQuery,
-    estadoSelected,
-  ]);
+  const resetPageAndSelection = () => {
+    table.resetPage();
+    table.clearSelection();
+  };
 
-  useEffect(() => {
-    if (!isSearching) {
-      inputRef.current?.focus();
-    }
-  }, [isSearching]);
+  const handleSearchDebouncedChange = (value: string) => {
+    filters.setField("serverSearch", value);
+    resetPageAndSelection();
+  };
 
-  const handleSortChange = (option: OptionSelect | null) => {
-    if (!option) {
-      setSorting([]);
+  const handleClearSearch = () => {
+    filters.patch({
+      search: "",
+      serverSearch: "",
+    });
+    resetPageAndSelection();
+  };
+
+  const handleDepartamentoChange = (value: string | null) => {
+    filters.patch({
+      departamentoId: value,
+      municipioId: null,
+    });
+    resetPageAndSelection();
+  };
+
+  const handleMunicipioChange = (value: string | null) => {
+    filters.setField("municipioId", value);
+    resetPageAndSelection();
+  };
+
+  const handleSectorChange = (value: string | null) => {
+    filters.setField("sectorId", value);
+    resetPageAndSelection();
+  };
+
+  const handleZonaFacturacionChange = (value: string | null) => {
+    filters.setField("zonaFacturacionId", value);
+    resetPageAndSelection();
+  };
+
+  const handleEstadoChange = (value: string | null) => {
+    filters.setField("estado", value);
+    resetPageAndSelection();
+  };
+
+  const handleEstadoCobranzaChange = (value: string | null) => {
+    filters.setField("estadoCobranza", value);
+    resetPageAndSelection();
+  };
+
+  const handleSortChange = (value: string | null) => {
+    filters.setField("sort", value);
+
+    if (!value) {
+      table.setSorting([]);
       return;
     }
-    const [fieldKey, direction] = option.value.split("-");
-    const columnId = fieldMapping[fieldKey];
-    if (columnId) {
-      setSorting([{ id: columnId, desc: direction === "desc" }]);
+
+    const [key, direction] = value.split("-");
+    const columnId = CUSTOMER_SORT_FIELD_MAP[key];
+
+    if (!columnId) {
+      table.setSorting([]);
+      return;
+    }
+
+    table.setSorting([{ id: columnId, desc: direction === "desc" }]);
+  };
+
+  const handleClearFilters = () => {
+    filters.patch({
+      search: "",
+      serverSearch: "",
+      departamentoId: "8",
+      municipioId: null,
+      sectorId: null,
+      zonaFacturacionId: null,
+      estado: null,
+      estadoCobranza: null,
+      sort: null,
+    });
+
+    table.setSorting([]);
+    resetPageAndSelection();
+  };
+
+  const handleExportInfoSelected = async () => {
+    const ids = selectedIds.map(Number);
+
+    try {
+      const data = await exportInfoMutation.mutateAsync({ ids });
+      downloadFile(data, `Reporte_Clientes_${Date.now()}.xlsx`);
+      toast.success("Reporte de información descargado");
+      table.clearSelection();
+    } catch {
+      toast.error("Error al generar el reporte de información");
     }
   };
 
-  // 🔹 Tabla solo con paginación server-side (sin filtro global local)
-  const table = useReactTable({
-    data: clientes,
-    columns,
-    pageCount: Math.ceil(totalCount / pagination.pageSize) || 0,
-    manualPagination: true,
-    state: {
-      pagination,
-      sorting,
-    },
-    onPaginationChange: setPagination,
-    onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-  });
+  const handleExportPagosSelected = async () => {
+    const ids = selectedIds.map(Number);
+
+    try {
+      const data = await exportPagosMutation.mutateAsync({ ids });
+      downloadFile(data, `Historial_Pagos_${Date.now()}.xlsx`);
+      toast.success("Historial de pagos descargado");
+      table.clearSelection();
+    } catch {
+      toast.error("Error al generar el historial");
+    }
+  };
+
+  const handleClearReportFilters = () => {
+    reportFilters.patch({
+      paidRange: { start: null, end: null },
+      generatedRange: { start: null, end: null },
+      userId: null,
+      estados: [],
+    });
+  };
+
+  const handleGenerateReportCobranza = async () => {
+    const payload: FiltersProps = {
+      startDate: toDateOrNull(reportFilters.state.paidRange.start) ?? undefined,
+      endDate: toDateOrNull(reportFilters.state.paidRange.end),
+
+      startDateG:
+        toDateOrNull(reportFilters.state.generatedRange.start) ?? undefined,
+      endDateG: toDateOrNull(reportFilters.state.generatedRange.end),
+
+      userId: reportFilters.state.userId
+        ? Number(reportFilters.state.userId)
+        : null,
+
+      estados: reportFilters.state.estados,
+    };
+
+    await toast.promise(createReportCobranza.mutateAsync(payload), {
+      loading: "Generando reporte...",
+      success: (data: any) => {
+        downloadFile(data, `Reporte_Pagos_${Date.now()}.xlsx`);
+        reportDialog.close();
+        return "Reporte generado";
+      },
+      error: (error) => getApiErrorMessageAxios(error),
+    });
+  };
 
   return (
-    <PageTransitionCrm
-      titleHeader="Lista de clientes"
-      subtitle={`${summary.activo} Activos · ${summary.atrasado} Atrasados · ${summary.moroso} Morosos · ${summary.pendiente_activo} Pendiente Activo`}
-      variant="fade-pure"
-    >
-      <Card className="max-w-full shadow-lg">
-        <CardContent>
-          <div className="flex items-center justify-between mb-4"></div>
+    <PageTransitionCrm titleHeader="Lista de clientes" variant="fade-pure">
+      <AppContainer size="full" paddingY="none" paddingX="none">
+        <AppStack gap="sm">
+          <AppInline gap="xs" wrap>
+            <AppBadge tone="success" appearance="soft">
+              {summary.activo} activos
+            </AppBadge>
+            <AppBadge tone="warning" appearance="soft">
+              {summary.atrasado} atrasados
+            </AppBadge>
+            <AppBadge tone="danger" appearance="soft">
+              {summary.moroso} morosos
+            </AppBadge>
+            <AppBadge tone="info" appearance="soft">
+              {summary.pendiente_activo} pendientes
+            </AppBadge>
+          </AppInline>
 
-          {/* Campo de Búsqueda (solo server-side) */}
-          <div className="relative mb-3">
-            {filter && (
-              <button
-                onClick={() => {
-                  setFilter("");
-                  inputRef.current?.focus();
-                }}
-                className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-sm transition-colors z-10"
-                type="button"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
+          <CustomerTableFilters
+            filters={filters.state}
+            options={{
+              departamentos: optionsDepartamentos,
+              municipios: optionsMunicipios,
+              sectores: optionsSectores,
+              zonasFacturacion: optionsZonasFacturacion,
+            }}
+            isSearching={customersQuery.isFetching}
+            onSearchChange={(value) => filters.setField("search", value)}
+            onSearchDebouncedChange={handleSearchDebouncedChange}
+            onClearSearch={handleClearSearch}
+            onDepartamentoChange={handleDepartamentoChange}
+            onMunicipioChange={handleMunicipioChange}
+            onSectorChange={handleSectorChange}
+            onZonaFacturacionChange={handleZonaFacturacionChange}
+            onEstadoChange={handleEstadoChange}
+            onEstadoCobranzaChange={handleEstadoCobranzaChange}
+            onSortChange={handleSortChange}
+            onClearFilters={handleClearFilters}
+            rightActions={
+              <CustomerReportsCobranzaDialog
+                open={reportDialog.isOpen}
+                onOpenChange={reportDialog.setOpen}
+                filters={reportFilters.state}
+                userOptions={userOptions}
+                isGenerating={createReportCobranza.isPending}
+                onPaidRangeChange={(range) =>
+                  reportFilters.setField("paidRange", range)
+                }
+                onGeneratedRangeChange={(range) =>
+                  reportFilters.setField("generatedRange", range)
+                }
+                onUserChange={(userId) =>
+                  reportFilters.setField("userId", userId)
+                }
+                onEstadosChange={(estados) =>
+                  reportFilters.setField("estados", estados)
+                }
+                onClear={handleClearReportFilters}
+                onGenerate={handleGenerateReportCobranza}
+              />
+            }
+          />
 
-            <Input
-              ref={inputRef}
-              style={{ boxShadow: "none" }}
-              type="text"
-              placeholder="Buscar por Nombre, Teléfono, Dirección, DPI o IP..."
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              // Si hay filtro (botón visible), empujamos el texto a la derecha (pl-8)
-              // Si no, mantenemos el padding normal (px-2)
-              className={`py-1 text-xs border-2 transition-all ${
-                filter ? "pl-8 pr-2" : "px-2"
-              }`}
+          <AppCard variant="outline" size="xs" radius="md">
+            <AppDataTable<ClienteTableDto>
+              data={clientes}
+              columns={columns}
+              getRowId={(row) => String(row.id)}
+              isLoading={customersQuery.isPending}
+              isFetching={customersQuery.isFetching}
+              error={customersQuery.error}
+              onRetry={() => customersQuery.refetch()}
+              paginationMode="server"
+              pagination={table.getPaginationConfig({
+                totalRows: totalCount,
+                pageSizeOptions: PAGE_SIZE_OPTIONS,
+              })}
+              {...table.getDataTableStateProps()}
+              enableRowSelection
+              enableColumnVisibility
+              enableColumnPinning
+              enableVirtualization
+              stickyHeader
+              density={table.density}
+              maxHeight="70vh"
+              // rightToolbar={
+              //   <AppTableDensityToggle
+              //     value={table.density}
+              //     onChange={table.setDensity}
+              //   />
+              // }
+              bulkActions={
+                <CustomerBulkActions
+                  selectedCount={selectedIds.length}
+                  isLoading={isExportingSelected}
+                  onExportInfo={handleExportInfoSelected}
+                  onExportPagos={handleExportPagosSelected}
+                  onClearSelection={table.clearSelection}
+                />
+              }
             />
-          </div>
-
-          {/* Controles de filtrado y ordenamiento */}
-          <div className="mb-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-              {/* Departamento */}
-              <div className="space-y-1">
-                <Label htmlFor="departamentoId-all">Departamento</Label>
-                <ReactSelectComponent
-                  placeholder="Seleccione un departamento"
-                  isClearable
-                  options={optionsDepartamentos}
-                  value={
-                    depaSelected
-                      ? {
-                          value: depaSelected,
-                          label:
-                            departamentos.find(
-                              (depa) => depa.id.toString() === depaSelected
-                            )?.nombre || "",
-                        }
-                      : null
-                  }
-                  onChange={handleSelectDepartamento}
-                  className="text-xs text-black"
-                />
-              </div>
-
-              {/* Municipio */}
-              <div className="space-y-1">
-                <Label htmlFor="municipioId-all">Municipio</Label>
-                <ReactSelectComponent
-                  placeholder="Seleccione un municipio"
-                  isClearable
-                  options={optionsMunis}
-                  onChange={handleSelectMunicipio}
-                  value={
-                    muniSelected
-                      ? {
-                          value: muniSelected,
-                          label:
-                            municipios.find(
-                              (muni) => muni.id.toString() == muniSelected
-                            )?.nombre || "",
-                        }
-                      : null
-                  }
-                  className="text-xs text-black"
-                />
-              </div>
-
-              {/* Sector */}
-              <div className="space-y-1">
-                <Label htmlFor="sectorId-all">Sector</Label>
-                <ReactSelectComponent
-                  placeholder="Seleccione un sector"
-                  isClearable
-                  options={optionsSectores}
-                  onChange={handleSelectSector}
-                  value={
-                    sectorSelected
-                      ? {
-                          value: sectorSelected,
-                          label:
-                            sectores.find(
-                              (muni) => muni.id.toString() == sectorSelected
-                            )?.nombre || "",
-                        }
-                      : null
-                  }
-                  className="text-xs text-black"
-                />
-              </div>
-
-              {/* Estado cliente */}
-              <div className="space-y-1">
-                <Label htmlFor="estadoId-all">Estado</Label>
-                <ReactSelectComponent
-                  placeholder="Seleccione un estado"
-                  options={estadosConDescripcion}
-                  onChange={handleSelectEstado}
-                  value={
-                    estadosConDescripcion.find(
-                      (opt) => opt.value === estadoSelected
-                    ) || null
-                  }
-                  isClearable
-                  className="text-xs text-black"
-                />
-              </div>
-
-              {/* Zona de Facturación */}
-              <div className="space-y-1">
-                <Label>Zona de Facturación</Label>
-                <ReactSelectComponent
-                  isClearable
-                  placeholder="Ordenar por facturación zona"
-                  className="text-xs text-black"
-                  options={optionsZonasFacturacion}
-                  onChange={handleSelectZonaFacturacion}
-                  value={
-                    zonasFacturacionSelected
-                      ? {
-                          value: zonasFacturacionSelected,
-                          label:
-                            zonasFacturacion.find(
-                              (s) =>
-                                s.id.toString() === zonasFacturacionSelected
-                            )?.nombre || "",
-                        }
-                      : null
-                  }
-                />
-              </div>
-
-              {/* Ordenamiento */}
-              <div className="space-y-1">
-                <Label>Ordenar por</Label>
-                <ReactSelectComponent
-                  className="text-xs text-black"
-                  options={sortOptions}
-                  isClearable
-                  onChange={handleSortChange}
-                  placeholder="Ordenar por..."
-                />
-              </div>
-
-              {/* Items por página */}
-              <div className="space-y-1">
-                <Label>Items por página</Label>
-                <Select
-                  onValueChange={(value) =>
-                    setPagination((prev) => ({
-                      ...prev,
-                      pageSize: Number(value),
-                    }))
-                  }
-                  defaultValue={String(pagination.pageSize)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Items por página" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Botón scroll top/bottom */}
-              <button
-                onClick={handleToggle}
-                className="fixed z-50 flex items-center justify-center w-10 h-10 text-white transition-colors rounded-full shadow-lg bottom-6 right-6 bg-rose-500 hover:bg-rose-600"
-                aria-label={atBottom ? "Ir al tope" : "Ir al final"}
-              >
-                {atBottom ? <ChevronUp /> : <ChevronDown />}
-              </button>
-            </div>
-          </div>
-
-          {/* Tabla */}
-          <div className="overflow-x-auto border border-gray-200 rounded-md shadow-sm dark:border-gray-800 dark:bg-transparent dark:shadow-gray-900/30">
-            {isSearching ? (
-              <ClientTableSkeleton />
-            ) : (
-              <table className="w-full text-xs border-collapse">
-                <thead className="bg-gray-50 dark:bg-transparent dark:border-b dark:border-gray-800">
-                  <tr>
-                    <th className="px-3 py-2 font-medium text-left text-gray-600 dark:text-gray-300">
-                      ID
-                    </th>
-                    <th className="px-3 py-2 font-medium text-left text-gray-600 dark:text-gray-300">
-                      Nombre Completo
-                    </th>
-                    <th className="px-3 py-2 font-medium text-left text-gray-600 dark:text-gray-300">
-                      Teléfono
-                    </th>
-                    <th className="px-3 py-2 font-medium text-left text-gray-600 dark:text-gray-300">
-                      IP
-                    </th>
-                    <th className="px-3 py-2 font-medium text-left text-gray-600 dark:text-gray-300">
-                      Servicios
-                    </th>
-                    <th className="px-3 py-2 font-medium text-left text-gray-600 dark:text-gray-300">
-                      Zona de Facturación
-                    </th>
-                    <th className="px-3 py-2 font-medium text-left text-gray-600 dark:text-gray-300">
-                      Estado cliente
-                    </th>
-                    <th className="px-3 py-2 font-medium text-left text-gray-600 dark:text-gray-300">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                  {table.getRowModel().rows.map((row) => (
-                    <motion.tr
-                      key={row.id}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 120,
-                        damping: 22,
-                      }}
-                      className=" hover:bg-gray-50 dark:bg.transparent dark:hover:bg-gray-900/20 dark:text-gray-100"
-                    >
-                      <td className="px-3 py-2 font-medium text-center">
-                        {row.original.id}
-                      </td>
-                      <Link
-                        to={`/crm/cliente/${row.original.id}/?tab=resumen`}
-                        className="contents"
-                      >
-                        <td className="px-3 py-2 truncate max-w-[120px] hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline">
-                          {`${row.original.nombreCompleto}`.trim()}
-                        </td>
-                      </Link>
-                      <td className="px-3 py-2 truncate max-w-[90px] whitespace-nowrap text-gray-600 dark:text-gray-400">
-                        {row.original.telefono}
-                      </td>
-                      <td className="px-3 py-2 truncate max-w-[150px] whitespace-nowrap text-gray-600 dark:text-gray-400">
-                        {row.original.direccionIp}
-                      </td>
-                      <td className="px-3 py-2 truncate max-w-[120px] whitespace-nowrap text-gray-600 dark:text-gray-400">
-                        {row.original.servicios
-                          .map((s) => s.nombreServicio)
-                          .join(", ")}
-                      </td>
-                      <td className="px-3 py-2 truncate max-w-[100px] whitespace-nowrap text-gray-600 dark:text-gray-400">
-                        {row.original.facturacionZona}
-                      </td>
-                      <td
-                        className={`px-3 py-2 truncate max-w-[100px] whitespace-nowrap ${getEstadoColorText(
-                          returnStatusClient(row.original.estado)
-                        )}`}
-                      >
-                        {returnStatusClient(row.original.estado)}
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex justify-center">
-                          <Link to={`/crm/cliente-edicion/${row.original.id}`}>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800/30 dark:text-gray-300"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </Link>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {/* Controles de Paginación */}
-          <div className="flex items-center justify-between px-4 py-3 mt-0 text-xs border-t border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-transparent dark:text-gray-300 rounded-b-md">
-            <Button
-              variant="outline"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="h-8 px-3 py-1 text-xs font-medium transition-colors border-gray-300 rounded-md disabled:opacity-50 dark:border-gray-700 dark:bg-transparent dark:text-gray-300 dark:hover:bg-gray-800/30"
-            >
-              Anterior
-            </Button>
-
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              Página{" "}
-              <span className="font-medium">{pagination.pageIndex + 1}</span> de{" "}
-              <span className="font-medium">{table.getPageCount()}</span>
-            </span>
-
-            <Button
-              variant="outline"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="h-8 px-3 py-1 text-xs font-medium transition-colors border-gray-300 rounded-md disabled:opacity-50 dark:border-gray-700 dark:bg-transparent dark:text-gray-300 dark:hover:bg-gray-800/30"
-            >
-              Siguiente
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </AppCard>
+        </AppStack>
+      </AppContainer>
     </PageTransitionCrm>
   );
 }

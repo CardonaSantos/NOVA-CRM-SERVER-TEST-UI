@@ -1,259 +1,333 @@
-"use client";
-import { useRef, useState, useMemo } from "react";
-import { MultiValue } from "react-select";
+// "use client";
+// import { useRef, useState, useMemo } from "react";
+// import { MultiValue } from "react-select";
+// // import TicketList from "./CrmTicketList";
+// import TicketDetail from "./CrmTicketDetails";
+// import TicketFilters from "./CrmTicketFilter";
+// import { PageTransitionCrm } from "@/components/Layout/page-transition";
+// import { OptionSelected } from "../ReactSelectComponent/OptionSelected";
+// import { useGetTicketSoluciones } from "../CrmHooks/hooks/use-ticket-soluciones/useTicketSoluciones";
+// import {
+//   QuerySearchTickets,
+//   TicketsData,
+//   useGetTicketsSoporte,
+// } from "../CrmHooks/hooks/use-tickets/useTicketsSoporte";
+// import { useGetUsersToSelect } from "../CrmHooks/hooks/useUsuarios/use-usuers";
+// import { useGetCustomerToSelect } from "../CrmHooks/hooks/Client/useGetClient";
+// import { useGetTagsTicket } from "../CrmHooks/hooks/tags-ticket/useTagsTickets";
+// import { useStoreCrm } from "../ZustandCrm/ZustandCrmContext";
+// import { EstadoTicketSoporte } from "../DashboardCRM/types";
+// import CrmTicketPagination from "./CrmTicketPagination";
+// import { MetaPropsResponse } from "../features/meta-server-response/meta-responses";
+// import { useSearchParams } from "react-router-dom";
+// import { useTabChangeWithUrl } from "../Utils/Components/handleTabChangeWithParamURL";
+// import { ReusableTabs, TabItem } from "../Utils/Components/tabs/reusable-tabs";
+// import { Kanban, Ticket as TicketIcon } from "lucide-react";
+// import TicketList from "./components/ticket-list";
+// // import TicketList from "./CrmTicketList";
 
-// Components
-import TicketList from "./CrmTicketList";
-import TicketDetail from "./CrmTicketDetails";
-import TicketFilters from "./CrmTicketFilter";
-import { PageTransitionCrm } from "@/components/Layout/page-transition";
-import { OptionSelected } from "../ReactSelectComponent/OptionSelected";
+// export default function TicketDashboard() {
+//   const userId = useStoreCrm((state) => state.userIdCRM) ?? 0;
 
-// Hooks & Queries
-import { useGetTicketSoluciones } from "../CrmHooks/hooks/use-ticket-soluciones/useTicketSoluciones";
-import { useGetTicketsSoporte } from "../CrmHooks/hooks/use-tickets/useTicketsSoporte";
-import { useGetUsersToSelect } from "../CrmHooks/hooks/useUsuarios/use-usuers";
-import { useGetCustomerToSelect } from "../CrmHooks/hooks/Client/useGetClient";
-import { useGetTagsTicket } from "../CrmHooks/hooks/tags-ticket/useTagsTickets";
+//   const [searchParams, setSearchParams] = useSearchParams();
+//   const defaultTab = (searchParams.get("tab") as string) || "tickets";
 
-// Types & Utils
-import type { Ticket } from "./ticketTypes";
-import { EstadoTicketSoporte } from "../DashboardCRM/types";
+//   const [ticketTab, setTicketTab] = useState("inbox");
+//   const [dashboardTab, setDashboardTab] = useState(defaultTab);
 
-type DateRange = {
-  startDate: Date | undefined;
-  endDate: Date | undefined;
-};
+//   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
+//   const [openCreateTicket, setOpenCreateTicket] = useState(false);
 
-export default function TicketDashboard() {
-  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
-  const [openCreateTicket, setOpenCreateTicket] = useState(false);
-  const detailRef = useRef<HTMLDivElement>(null);
+//   const [tecnicoSelected, setTecnicoSelected] = useState<string | null>(null);
 
-  const [filterText, setFilterText] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-  const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
-  const [selectedCreator, setSelectedCreator] = useState<string | null>(null);
-  const [tecnicoSelected, setTecnicoSelected] = useState<string | null>(null);
-  const [labelsSelecteds, setLabelsSelecteds] = useState<number[]>([]);
-  const [dateRange, setDateRange] = useState<DateRange>({
-    startDate: undefined,
-    endDate: undefined,
-  });
+//   const [filters, setFilters] = useState<QuerySearchTickets>({
+//     page: 1,
+//     limit: 15,
+//   });
+//   const query = useMemo(() => filters, [filters]);
+//   const { data: rawTickets, refetch: getTickets } = useGetTicketsSoporte(query);
+//   const { data: rawSolutions } = useGetTicketSoluciones();
+//   const { data: rawCustomers } = useGetCustomerToSelect();
+//   const { data: rawTags } = useGetTagsTicket();
+//   const { data: rawTecs } = useGetUsersToSelect();
 
-  // ----------------------------------------------------------------------
-  // 5. DATA FETCHING (API HOOKS)
-  // ----------------------------------------------------------------------
-  const { data: rawTickets, refetch: getTickets } = useGetTicketsSoporte();
-  const { data: rawSolutions } = useGetTicketSoluciones();
-  const { data: rawCustomers } = useGetCustomerToSelect();
-  const { data: rawTags } = useGetTagsTicket();
-  const { data: rawTecs } = useGetUsersToSelect();
+//   // Data normalization (Safe access)
+//   const ticketsSoporte = rawTickets?.data ? rawTickets.data : [];
 
-  // Data normalization (Safe access)
-  const ticketsSoporte = useMemo(() => rawTickets ?? [], [rawTickets]);
-  const soluciones = useMemo(() => rawSolutions ?? [], [rawSolutions]);
-  const clientes = useMemo(() => rawCustomers ?? [], [rawCustomers]);
-  const etiquetas = useMemo(() => rawTags ?? [], [rawTags]);
-  const tecnicos = useMemo(() => rawTecs ?? [], [rawTecs]);
+//   const meta = useMemo(() => {
+//     const met: MetaPropsResponse = rawTickets?.meta
+//       ? rawTickets?.meta
+//       : {
+//           hasNextPage: false,
+//           hasPrevPage: false,
+//           limit: 15,
+//           page: 1,
+//           total: 0,
+//           totalPages: 0,
+//         };
+//     return met;
+//   }, [rawTickets]);
 
-  // ----------------------------------------------------------------------
-  // 6. DERIVED DATA (MEMOIZED OPTIONS & STATS)
-  // ----------------------------------------------------------------------
+//   const ticketsData = useMemo(() => {
+//     const tData: TicketsData = rawTickets?.ticketsData
+//       ? rawTickets.ticketsData
+//       : {
+//           ticketEnProceso: 0,
+//           ticketsDisponibles: 0,
+//           ticketsResueltos: 0,
+//         };
+//     return tData;
+//   }, [rawTickets?.ticketsData]);
 
-  // Opciones para Selects
-  const optionsLabels = useMemo(
-    () =>
-      etiquetas.map((label) => ({
-        value: label.id.toString(),
-        label: label.nombre,
-      })),
-    [etiquetas]
-  );
+//   const soluciones = useMemo(() => rawSolutions ?? [], [rawSolutions]);
+//   const clientes = useMemo(() => rawCustomers ?? [], [rawCustomers]);
+//   const etiquetas = useMemo(() => rawTags ?? [], [rawTags]);
+//   const tecnicos = useMemo(() => rawTecs ?? [], [rawTecs]);
 
-  const optionsTecs = useMemo(
-    () =>
-      tecnicos.map((tec) => ({
-        value: tec.id.toString(),
-        label: tec.nombre,
-      })),
-    [tecnicos]
-  );
+//   // 6. DERIVED DATA (MEMOIZED OPTIONS & STATS)
 
-  const optionsCustomers = useMemo(
-    () =>
-      clientes.map((c) => ({
-        value: c.id.toString(),
-        label: c.nombre,
-      })),
-    [clientes]
-  );
+//   // Opciones para Selects
+//   const optionsLabels = useMemo(
+//     () =>
+//       etiquetas.map((label) => ({
+//         value: label.id.toString(),
+//         label: label.nombre,
+//       })),
+//     [etiquetas],
+//   );
 
-  // Ticket seleccionado actualmente
-  const selectedTicket = useMemo(
-    () => ticketsSoporte.find((ticket) => ticket.id === selectedTicketId),
-    [ticketsSoporte, selectedTicketId]
-  );
+//   const optionsTecs = useMemo(
+//     () =>
+//       tecnicos.map((tec) => ({
+//         value: tec.id.toString(),
+//         label: tec.nombre,
+//       })),
+//     [tecnicos],
+//   );
 
-  const stats = useMemo(
-    () => ({
-      abiertos: ticketsSoporte.filter(
-        (t) => t.status === EstadoTicketSoporte.ABIERTA
-      ).length,
-      proceso: ticketsSoporte.filter(
-        (t) => t.status === EstadoTicketSoporte.EN_PROCESO
-      ).length,
-      resueltos: ticketsSoporte.filter(
-        (t) => t.status === EstadoTicketSoporte.RESUELTA
-      ).length,
-    }),
-    [ticketsSoporte]
-  );
+//   const optionsCustomers = useMemo(
+//     () =>
+//       clientes.map((c) => ({
+//         value: c.id.toString(),
+//         label: c.nombre,
+//       })),
+//     [clientes],
+//   );
 
-  const filteredTickets = useMemo(() => {
-    return ticketsSoporte.filter((ticket) => {
-      const term = filterText.toLowerCase();
-      const matchesText =
-        ticket.title.toLowerCase().includes(term) ||
-        (ticket.customer?.name || "").toLowerCase().includes(term) ||
-        (ticket.description || "").toLowerCase().includes(term) ||
-        ticket.id.toString().includes(filterText);
+//   // Ticket seleccionado actualmente
+//   const selectedTicket = useMemo(
+//     () => ticketsSoporte.find((ticket) => ticket.id === selectedTicketId),
+//     [ticketsSoporte, selectedTicketId],
+//   );
 
-      if (!matchesText) return false;
+//   const handleTabChange = (value: string) => {
+//     setTicketTab(value);
 
-      if (selectedStatus && String(ticket.status) !== selectedStatus)
-        return false;
+//     setFilters((prev) => ({
+//       ...prev,
+//       page: 1,
+//       vista: value,
+//     }));
+//   };
 
-      if (
-        selectedAssignee &&
-        ticket.assignee?.id.toString() !== selectedAssignee
-      )
-        return false;
-      if (selectedCreator && ticket.creator?.id.toString() !== selectedCreator)
-        return false;
-      if (tecnicoSelected && ticket.assignee?.id.toString() !== tecnicoSelected)
-        return false;
+//   const handleSelectedTecnico = (optionSelect: OptionSelected | null) => {
+//     setTecnicoSelected(optionSelect ? optionSelect.value : null);
 
-      if (labelsSelecteds.length > 0) {
-        const originalMatchLogic = ticket.tags?.some((tag) =>
-          labelsSelecteds.includes(Number(tag.value))
-        );
-        if (!originalMatchLogic) return false;
-      }
+//     setFilters((prev) => ({
+//       ...prev,
+//       tecs: optionSelect ? [Number(optionSelect.value)] : undefined,
+//       page: 1,
+//     }));
+//   };
 
-      if (dateRange.startDate || dateRange.endDate) {
-        const ticketDate = new Date(ticket.date);
-        if (isNaN(ticketDate.getTime())) return false;
+//   const handleChangeLabels = (
+//     selectedOptions: MultiValue<{ value: string; label: string }>,
+//   ) => {
+//     const selectedIds = selectedOptions.map((option) => Number(option.value));
 
-        const start = dateRange.startDate
-          ? new Date(dateRange.startDate)
-          : new Date(0);
-        start.setHours(0, 0, 0, 0);
+//     setFilters((prev) => ({
+//       ...prev,
+//       tags: selectedIds.length ? selectedIds : undefined,
+//       page: 1,
+//     }));
+//   };
 
-        const end = dateRange.endDate
-          ? new Date(dateRange.endDate)
-          : new Date();
-        end.setHours(23, 59, 59, 999);
+//   type DateSide = "start" | "end";
 
-        if (ticketDate < start || ticketDate > end) return false;
-      }
+//   const handleChangeDates = (side: DateSide, date: Date | null) => {
+//     setFilters((prev) => ({
+//       ...prev,
+//       [side === "start" ? "fechaInicio" : "fechaFin"]: date
+//         ? date.toISOString()
+//         : undefined,
+//       page: 1,
+//     }));
+//   };
 
-      return true;
-    });
-  }, [
-    ticketsSoporte,
-    filterText,
-    selectedStatus,
-    selectedAssignee,
-    selectedCreator,
-    tecnicoSelected,
-    labelsSelecteds,
-    dateRange,
-  ]);
+//   const handleSearchChange = (value: string) => {
+//     setFilters((prev) => ({
+//       ...prev,
+//       search: value || undefined,
+//       page: 1,
+//     }));
+//   };
 
-  const handleSelectedTecnico = (optionSelect: OptionSelected | null) => {
-    setTecnicoSelected(optionSelect ? optionSelect.value : null);
-  };
+//   const handleStatusChange = (value: string | null) => {
+//     setFilters((prev) => ({
+//       ...prev,
+//       estado: value ? (value as EstadoTicketSoporte) : undefined,
+//       page: 1,
+//     }));
+//   };
 
-  const handleChangeLabels = (
-    selectedOptions: MultiValue<{ value: string; label: string }>
-  ) => {
-    const selectedIds = selectedOptions.map((option) => parseInt(option.value));
-    setLabelsSelecteds(selectedIds);
-  };
+//   const handleQuickViewChange = (value: string, userId: number) => {
+//     setFilters((prev) => {
+//       if (value === "assignedToMe") {
+//         return {
+//           ...prev,
+//           tecs: [userId],
+//           creadosPor: undefined,
+//           page: 1,
+//         };
+//       }
 
-  const handleSelectTicket = (ticket: Ticket) => {
-    setSelectedTicketId(ticket.id);
-    setTimeout(() => {
-      detailRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 50);
-  };
-  console.log("Los tickets llegando son: ", filteredTickets);
+//       if (value === "createdByMe") {
+//         return {
+//           ...prev,
+//           creadosPor: userId,
+//           tecs: undefined,
+//           page: 1,
+//         };
+//       }
 
-  return (
-    <PageTransitionCrm
-      titleHeader="Tickets Soporte"
-      subtitle={`${stats.abiertos} abiertos · ${stats.proceso} en proceso · ${stats.resueltos} cerrados hoy`}
-      variant="fade-pure"
-    >
-      <div>
-        {/* FILTERS AREA */}
-        <TicketFilters
-          tickets={filteredTickets} // Pasamos los ya filtrados o los totales según necesite el componente para conteos
-          onFilterChange={setFilterText}
-          onStatusChange={setSelectedStatus}
-          // Create Modal Props
-          openCreatT={openCreateTicket}
-          setOpenCreateT={setOpenCreateTicket}
-          getTickets={getTickets}
-          // Filter Setters
-          setSelectedAssignee={setSelectedAssignee}
-          setSelectedCreator={setSelectedCreator}
-          // Technical Filters
-          tecnicos={tecnicos}
-          tecnicoSelected={tecnicoSelected}
-          handleSelectedTecnico={handleSelectedTecnico}
-          // Label Filters
-          etiquetas={etiquetas}
-          etiquetasSelecteds={labelsSelecteds}
-          handleChangeLabels={handleChangeLabels}
-          // Date Filters
-          dateRange={dateRange}
-          setDateRange={setDateRange}
-        />
+//       return {
+//         ...prev,
+//         tecs: undefined,
+//         creadosPor: undefined,
+//         page: 1,
+//       };
+//     });
+//   };
 
-        {/* CONTENT AREA */}
-        {/* <div className="mt-2 grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-220px)]"> */}
-        <div className="mt-2 h-[calc(100vh-220px)] flex flex-col lg:grid lg:grid-cols-2 gap-4">
-          {/* LEFT COLUMN: LIST */}
-          <div
-            className={`flex flex-col overflow-hidden 
-  ${selectedTicket ? "h-1/2" : "h-full"} 
-  lg:h-full`}
-          >
-            <TicketList
-              tickets={filteredTickets}
-              selectedTicketId={selectedTicketId}
-              onSelectTicket={handleSelectTicket}
-            />
-          </div>
+//   const handleNextPage = () => {
+//     if (!meta?.hasNextPage) return;
 
-          {/* RIGHT COLUMN: DETAIL */}
-          {selectedTicket && (
-            <div className="flex flex-col h-1/2 overflow-hidden lg:h-full">
-              <TicketDetail
-                ticket={selectedTicket}
-                setSelectedTicketId={setSelectedTicketId}
-                getTickets={getTickets}
-                soluciones={soluciones}
-                optionsCustomers={optionsCustomers}
-                optionsLabels={optionsLabels}
-                optionsTecs={optionsTecs}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    </PageTransitionCrm>
-  );
-}
+//     setFilters((prev) => ({
+//       ...prev,
+//       page: (prev.page ?? 1) + 1,
+//     }));
+//   };
+
+//   const handlePrevPage = () => {
+//     if (!meta?.hasPrevPage) return;
+
+//     setFilters((prev) => ({
+//       ...prev,
+//       page: Math.max((prev.page ?? 1) - 1, 1),
+//     }));
+//   };
+
+//   // Tabs
+//   const handleChangeTabs = useTabChangeWithUrl({
+//     activeTab: dashboardTab,
+//     setActiveTab: setDashboardTab,
+//     searchParams,
+//     setSearchParams,
+//   });
+
+//   const tabs: Array<TabItem> = [
+//     {
+//       label: "Tickets",
+//       value: "tickets",
+//       icon: <TicketIcon size={16} />,
+//       content: (
+//         <div>
+//           <TicketFilters
+//             ticketsTotal={ticketsData.ticketsDisponibles}
+//             tickets={ticketsSoporte}
+//             onFilterChange={handleSearchChange}
+//             onStatusChange={handleStatusChange}
+//             onQuickViewChange={(value) => handleQuickViewChange(value, userId)}
+//             openCreatT={openCreateTicket}
+//             setOpenCreateT={setOpenCreateTicket}
+//             getTickets={getTickets}
+//             tecnicos={tecnicos}
+//             tecnicoSelected={tecnicoSelected}
+//             handleSelectedTecnico={handleSelectedTecnico}
+//             etiquetas={etiquetas}
+//             etiquetasSelecteds={filters.tags ?? []}
+//             handleChangeLabels={handleChangeLabels}
+//             dateRangeStart={filters.fechaInicio}
+//             dateRangeEnd={filters.fechaFin}
+//             handleChangeDates={handleChangeDates}
+//           />
+
+//           {/* CONTENT AREA */}
+//           <div className="mt-2 h-[calc(100vh-230px)] flex flex-col lg:grid lg:grid-cols-2 gap-4">
+//             <div
+//               className={`flex flex-col overflow-hidden bg-background border border-border rounded-lg shadow-sm
+//             ${selectedTicket ? "h-1/2" : "h-full"}
+//             lg:h-full`}
+//             >
+//               <div className="flex-1 min-h-0">
+//                 <TicketList
+//                   tickets={ticketsSoporte}
+//                   ticketsData={ticketsData}
+//                   selectedTicketId={selectedTicketId}
+//                   onSelectTicket={(t) => setSelectedTicketId(t.id)}
+//                   activeTab={ticketTab}
+//                   onTabChange={handleTabChange}
+//                 />
+//               </div>
+
+//               <div className="shrink-0 z-10">
+//                 <CrmTicketPagination
+//                   handleNextPage={handleNextPage}
+//                   handlePrevPage={handlePrevPage}
+//                   meta={meta}
+//                 />
+//               </div>
+//             </div>
+
+//             {selectedTicket && (
+//               <div className="flex flex-col h-1/2 overflow-hidden lg:h-full bg-background border border-border rounded-lg shadow-sm">
+//                 <TicketDetail
+//                   ticket={selectedTicket}
+//                   setSelectedTicketId={setSelectedTicketId}
+//                   getTickets={getTickets}
+//                   soluciones={soluciones}
+//                   optionsCustomers={optionsCustomers}
+//                   optionsLabels={optionsLabels}
+//                   optionsTecs={optionsTecs}
+//                 />
+//               </div>
+//             )}
+//           </div>
+//         </div>
+//       ),
+//     },
+
+//     {
+//       label: "Operativo",
+//       value: "tickets-operativo",
+//       icon: <Kanban size={16} />,
+//       content: (
+//         <div className="">
+//           <h2>Otra page</h2>
+//         </div>
+//       ),
+//     },
+//   ];
+
+//   return (
+//     <PageTransitionCrm titleHeader="Tickets Soporte" variant="fade-pure">
+//       <ReusableTabs
+//         tabs={tabs}
+//         activeTab={dashboardTab}
+//         setActiveTab={setDashboardTab}
+//         handleTabChange={handleChangeTabs}
+//         variant="compact"
+//       />
+//     </PageTransitionCrm>
+//   );
+// }

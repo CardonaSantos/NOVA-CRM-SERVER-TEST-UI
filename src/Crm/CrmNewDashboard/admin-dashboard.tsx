@@ -1,5 +1,18 @@
-// NewDashboard.tsx
+"use client";
+
+import * as React from "react";
+import { motion } from "framer-motion";
+import { AlertTriangle, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+
 import { fadeElegant } from "@/components/Layout/page-transition";
+import { AppAlert } from "@/components/app/primitives/app-alert";
+import { AppButton } from "@/components/app/primitives/app-button";
+import { AppContainer } from "@/components/app/primitives/app-container";
+import { AppDataState } from "@/components/app/primitives/app-data-state";
+import { AppStack } from "@/components/app/primitives/app-stack";
+
 import {
   useGetCobrosDashboard,
   useGetDashboardChartInstalaciones,
@@ -8,26 +21,35 @@ import {
   useGetTicketProceso,
 } from "../CrmHooks/hooks/dashboard/useDashboard";
 
-import { PersonaCampo } from "./interfaces/dashboard-interfaces";
-import { DashboardRoutesSidebar } from "./_components/DashboardRoutesSidebar";
-import { DashboardSupportSidebar } from "./_components/DashboardSupportSidebar";
-import { DashboardChartsGrid } from "./_components/DashboardChartsGrid";
-import { DashboardKpisSection } from "./_components/DashboardKpisSection";
-import {
-  DashboardCobrosResponse,
-  DashboardData,
-} from "../features/dashboard/dashboard.interfaces";
-import { useSocketEvent } from "../WEB/SocketProvider";
+import { useGetUsersRealTime } from "../CrmHooks/hooks/use-real-time-location/use-real-time-location";
+import { useInvalidateQk } from "../CrmHooks/hooks/useInvalidateQk/useInvalidateQk";
+
 import {
   DashboardQkeys,
   TicketsProcesoQkeys,
 } from "../CrmHooks/hooks/dashboard/Qk";
-import { useInvalidateQk } from "../CrmHooks/hooks/useInvalidateQk/useInvalidateQk";
-import { motion } from "framer-motion";
-import { toast } from "sonner";
+
+import { realTimeQkeys } from "../CrmHooks/hooks/use-real-time-location/Qk";
+import { useSocketEvent } from "../WEB/SocketProvider";
 import { showTicketBrowserNotification } from "../WEB/browserNotifications";
 
-const DEFAULT_DASHBOARD_DATA: DashboardData = {
+import { DashboardRoutesSidebar } from "./_components/DashboardRoutesSidebar";
+import { DashboardSupportSidebar } from "./_components/DashboardSupportSidebar";
+import { DashboardChartsGrid } from "./_components/DashboardChartsGrid";
+
+import type { DashboardCobrosResponse } from "../features/dashboard/dashboard.interfaces";
+
+import type { RealTimeLocationRaw } from "../features/real-time-location/real-time-location";
+import type { TicketsDashboardSoporte } from "./interfaces/dashboard-interfaces";
+import { DashboardRuntimeBar } from "./_components/dashboard-runtime-bar";
+import { DashboardKpisSection } from "./_components/DashboardKpisSection";
+import { DashboardMapPanel } from "./_components/dashboard-charts-grids";
+
+const EMPTY_COBROS_DATA: DashboardCobrosResponse = {
+  rutasActiva: [],
+  morosoTop: [],
+};
+const DEFAULT_DASHBOARD_DATA = {
   clientes: {
     totalEnSistema: 0,
     activos: 0,
@@ -44,87 +66,117 @@ const DEFAULT_DASHBOARD_DATA: DashboardData = {
     montoPendienteMes: 0,
   },
 };
+const EMPTY_TICKETS_SOPORTE: TicketsDashboardSoporte = {
+  tickets: [],
+  ticketsMetricas: {
+    enLinea: 0,
+  },
+};
 
-const initialCobrosData: DashboardCobrosResponse = {
-  rutasActiva: [
-    {
-      nombreRuta: "Ruta Centro",
-      cobrador: "Juan Pérez",
-      totalClientes: 120,
-    },
-  ],
-  morosoTop: [
-    {
-      id: 101,
-      nombre: "Pedro Pablo Ramírez",
-      cantidad: 12, // 12 meses/facturas pendientes
-    },
-  ],
+type TicketStatusChangePayload = {
+  ticketId: number;
+  nuevoEstado: string;
+  titulo?: string;
+  tecnico?: string;
 };
 
 function NewDashboard() {
   const invalidateQk = useInvalidateQk();
+  const queryClient = useQueryClient();
 
-  const { data: instalacionesMes = [] } = useGetDashboardChartInstalaciones();
+  const instalacionesMesQuery = useGetDashboardChartInstalaciones();
+  const instalacionesHistoricasQuery = useGetInstalacionesVsDesinstalaciones();
+  const kpisQuery = useGetDashboardData();
+  const ticketsQuery = useGetTicketProceso();
+  const cobrosQuery = useGetCobrosDashboard();
+  const locationsQuery = useGetUsersRealTime();
 
-  const { data: instalacionesHistoricas = [] } =
-    useGetInstalacionesVsDesinstalaciones();
+  const instalacionesMes = instalacionesMesQuery.data ?? [];
+  const instalacionesHistoricas = instalacionesHistoricasQuery.data ?? [];
+  const ticketsSoporte = ticketsQuery.data ?? EMPTY_TICKETS_SOPORTE;
+  const cobros = cobrosQuery.data ?? EMPTY_COBROS_DATA;
+  const kpisData = kpisQuery.data ?? DEFAULT_DASHBOARD_DATA;
+  const locations = React.useMemo<RealTimeLocationRaw[]>(() => {
+    return Array.isArray(locationsQuery.data) ? locationsQuery.data : [];
+  }, [locationsQuery.data]);
 
-  const { data: kpis } = useGetDashboardData();
+  const rutasActivas = Array.isArray(cobros.rutasActiva)
+    ? cobros.rutasActiva
+    : [];
 
-  const kpisData = kpis ? kpis : DEFAULT_DASHBOARD_DATA;
+  const topMorosos = Array.isArray(cobros.morosoTop) ? cobros.morosoTop : [];
 
-  const {
-    data: tickets = {
-      tickets: [],
-      ticketsMetricas: {
-        enLinea: 1,
-      },
-    },
-  } = useGetTicketProceso();
+  const ticketsEnProceso = Array.isArray(ticketsSoporte.tickets)
+    ? ticketsSoporte.tickets.length
+    : 0;
 
-  const { data: cobros = initialCobrosData } = useGetCobrosDashboard();
+  const tecnicosEnLinea = ticketsSoporte.ticketsMetricas?.enLinea ?? 0;
 
-  const rutasActivas = cobros.rutasActiva;
-  const topMorosos = cobros.morosoTop;
+  const isCoreLoading =
+    kpisQuery.isLoading || ticketsQuery.isLoading || cobrosQuery.isLoading;
 
-  const usuariosEnCampo: PersonaCampo[] = [
-    {
-      id: 1,
-      nombreCompleto: "Pedro Tec.",
-      location: {
-        lat: 15.667949507438097,
-        lng: -91.71367510658024,
-      },
-    },
-    {
-      id: 2,
-      nombreCompleto: "Luis Tec.",
-      location: {
-        lat: 15.667497802956671,
-        lng: -91.71273683529152,
-      },
-    },
-  ];
+  const isRefreshing =
+    kpisQuery.isFetching ||
+    ticketsQuery.isFetching ||
+    cobrosQuery.isFetching ||
+    instalacionesMesQuery.isFetching ||
+    instalacionesHistoricasQuery.isFetching ||
+    locationsQuery.isFetching;
 
-  console.log("Tickets: ", tickets);
-  console.log("Las instalaciones historicas: ", instalacionesHistoricas);
-  console.log("Las kpisData: ", kpisData);
+  const hasCoreData = Boolean(
+    kpisQuery.data || ticketsQuery.data || cobrosQuery.data,
+  );
 
-  useSocketEvent(
-    "ticket-soporte:change-status",
-    (payload) => {
-      // 1) invalidar queries
+  const dashboardError =
+    kpisQuery.error ??
+    ticketsQuery.error ??
+    cobrosQuery.error ??
+    instalacionesMesQuery.error ??
+    instalacionesHistoricasQuery.error ??
+    locationsQuery.error ??
+    null;
+
+  const hasSoftError = Boolean(
+    kpisQuery.isError ||
+    ticketsQuery.isError ||
+    cobrosQuery.isError ||
+    instalacionesMesQuery.isError ||
+    instalacionesHistoricasQuery.isError ||
+    locationsQuery.isError,
+  );
+
+  const showGlobalLoading = isCoreLoading && !hasCoreData;
+  const showGlobalError = Boolean(dashboardError && !hasCoreData);
+
+  const refetchAll = React.useCallback(async () => {
+    await Promise.allSettled([
+      kpisQuery.refetch(),
+      ticketsQuery.refetch(),
+      cobrosQuery.refetch(),
+      instalacionesMesQuery.refetch(),
+      instalacionesHistoricasQuery.refetch(),
+      locationsQuery.refetch(),
+    ]);
+  }, [
+    kpisQuery,
+    ticketsQuery,
+    cobrosQuery,
+    instalacionesMesQuery,
+    instalacionesHistoricasQuery,
+    locationsQuery,
+  ]);
+
+  const handleTicketStatusChange = React.useCallback(
+    (payload: TicketStatusChangePayload) => {
       invalidateQk(TicketsProcesoQkeys.all);
 
-      // 2) toast diferenciado por estado
       if (payload.nuevoEstado === "EN_PROCESO") {
         toast.success(`Ticket #${payload.ticketId} fue tomado en proceso`);
       } else if (payload.nuevoEstado === "PENDIENTE_REVISION") {
         toast.info(`Ticket #${payload.ticketId} quedó pendiente de revisión`);
       } else {
         toast.info(
-          `Ticket #${payload.ticketId} cambió a ${payload.nuevoEstado}`
+          `Ticket #${payload.ticketId} cambió a ${payload.nuevoEstado}`,
         );
       }
 
@@ -135,43 +187,152 @@ function NewDashboard() {
         tecnico: payload.tecnico,
       });
     },
-    [invalidateQk]
+    [invalidateQk],
   );
 
-  useSocketEvent(
-    "ruta-cobro:change-status",
-    () => {
-      invalidateQk(DashboardQkeys.cobros);
-    },
-    [invalidateQk]
-  );
+  const handleRutaCobroChange = React.useCallback(() => {
+    invalidateQk(DashboardQkeys.cobros);
+  }, [invalidateQk]);
 
-  useSocketEvent("facturacion:change-event", () => {
+  const handleFacturacionChange = React.useCallback(() => {
     invalidateQk(DashboardQkeys.kps);
-  });
+  }, [invalidateQk]);
+
+  const handleRealtimeLocation = React.useCallback(
+    (payload: RealTimeLocationRaw) => {
+      queryClient.setQueryData(
+        realTimeQkeys.all,
+        (oldData: RealTimeLocationRaw[] | undefined) => {
+          const incoming = payload;
+
+          if (!oldData) return [incoming];
+
+          const exists = oldData.some(
+            (location) => location.usuarioId === incoming.usuarioId,
+          );
+
+          if (!exists) return [...oldData, incoming];
+
+          return oldData.map((location) =>
+            location.usuarioId === incoming.usuarioId ? incoming : location,
+          );
+        },
+      );
+    },
+    [queryClient],
+  );
+
+  useSocketEvent("ticket-soporte:change-status", handleTicketStatusChange, [
+    handleTicketStatusChange,
+  ]);
+
+  useSocketEvent("ruta-cobro:change-status", handleRutaCobroChange, [
+    handleRutaCobroChange,
+  ]);
+
+  useSocketEvent("facturacion:change-event", handleFacturacionChange, [
+    handleFacturacionChange,
+  ]);
+
+  useSocketEvent("emit:location:real-time", handleRealtimeLocation, [
+    handleRealtimeLocation,
+  ]);
 
   return (
-    <motion.div
-      {...fadeElegant}
-      className="w-full flex flex-col gap-3 pb-4 py-2 px-2"
-    >
-      <div className="flex flex-col lg:flex-row gap-3">
-        <DashboardRoutesSidebar
-          rutaActiva={rutasActivas}
-          topMorosos={topMorosos}
-        />
+    <motion.div {...fadeElegant} className="min-w-0">
+      <AppContainer size="full" paddingX="xs" paddingY="xs" className="min-w-0">
+        <AppStack gap="xs" className="min-w-0 pb-3">
+          <DashboardRuntimeBar
+            isRefreshing={isRefreshing}
+            rutasCount={rutasActivas.length}
+            morososCount={topMorosos.length}
+            tecnicosEnLinea={tecnicosEnLinea}
+            ticketsEnProceso={ticketsEnProceso}
+            usuariosEnCampo={locations.length}
+            onRefresh={() => void refetchAll()}
+          />
 
-        <DashboardKpisSection kpisData={kpisData} />
+          {hasSoftError && !showGlobalError ? (
+            <AppAlert
+              tone="warning"
+              variant="soft"
+              size="xs"
+              icon={<AlertTriangle className="h-4 w-4" />}
+              title="Algunos datos no se pudieron actualizar"
+              description="El dashboard seguirá mostrando la última información disponible."
+              action={
+                <AppButton
+                  type="button"
+                  size="xs"
+                  variant="secondary"
+                  loading={isRefreshing}
+                  loadingText="Actualizando..."
+                  leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
+                  onClick={() => void refetchAll()}
+                >
+                  Reintentar
+                </AppButton>
+              }
+            />
+          ) : null}
 
-        <DashboardSupportSidebar ticketsSoporte={tickets} />
-      </div>
+          <AppDataState
+            isLoading={showGlobalLoading}
+            isFetching={isRefreshing}
+            error={showGlobalError ? dashboardError : null}
+            isEmpty={false}
+            onRetry={() => void refetchAll()}
+            loadingVariant="skeleton-grid"
+            loadingRows={6}
+          >
+            <AppStack gap="xs" className="min-w-0">
+              <section
+                aria-label="Dashboard operativo"
+                className={[
+                  "grid min-w-0 grid-cols-1 items-start gap-2",
+                  "xl:grid-cols-[15.5rem_minmax(0,1fr)_16rem]",
+                  "2xl:grid-cols-[17rem_minmax(0,1fr)_17rem]",
+                  "xl:[--dashboard-panel-h:31rem]",
+                  "2xl:[--dashboard-panel-h:31rem]",
+                ].join(" ")}
+              >
+                {/* Columna izquierda */}
+                <aside className="order-2 min-w-0 xl:order-1">
+                  <DashboardRoutesSidebar
+                    rutaActiva={rutasActivas}
+                    topMorosos={topMorosos}
+                  />
+                </aside>
 
-      {/* FILA INFERIOR: CHARTS */}
-      <DashboardChartsGrid
-        instalacionesMes={instalacionesMes}
-        usuariosEnCampo={usuariosEnCampo}
-        instalacionesHistoricas={instalacionesHistoricas}
-      />
+                {/* Centro */}
+                <main className="order-1 min-w-0 xl:order-2">
+                  <AppStack gap="xs" className="min-w-0">
+                    <DashboardKpisSection kpisData={kpisData} />
+
+                    <DashboardChartsGrid
+                      instalacionesMes={instalacionesMes}
+                      instalacionesHistoricas={instalacionesHistoricas}
+                    />
+                  </AppStack>
+                </main>
+
+                {/* Columna derecha */}
+                <aside className="order-3 min-w-0 xl:order-3 xl:h-[var(--dashboard-panel-h)]">
+                  <DashboardSupportSidebar ticketsSoporte={ticketsSoporte} />
+                </aside>
+              </section>
+
+              {/* Mapa abajo en ancho completo */}
+              <section
+                aria-label="Ubicación de técnicos en campo"
+                className="min-w-0"
+              >
+                <DashboardMapPanel usuariosEnCampo={locations} />
+              </section>
+            </AppStack>
+          </AppDataState>
+        </AppStack>
+      </AppContainer>
     </motion.div>
   );
 }

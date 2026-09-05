@@ -1,11 +1,11 @@
 // columnsClientesRutaCreate.tsx
 import { ColumnDef } from "@tanstack/react-table";
-import { ClienteInternetFromCreateRuta } from "../rutas-types";
 import { makeEsStringSort } from "@/utils/esStringSortCollatorTanstak";
 import { textIncludesTable } from "@/utils/textIncludesTableTanstak";
 import { numberInRangeTable } from "@/utils/numberInRangeTanstak";
 import { SortCaret } from "@/Crm/Utils/Components/SortCaret";
 import { formattMonedaGT } from "@/utils/formattMonedaGt";
+import { ClienteInternetFromCreateRuta } from "@/Crm/features/rutas/rutas.interfaces";
 
 const esStringSort = makeEsStringSort<ClienteInternetFromCreateRuta>();
 const includesFilter = textIncludesTable<ClienteInternetFromCreateRuta>();
@@ -106,7 +106,7 @@ export const columnsClientesRutaCreate: ColumnDef<ClienteInternetFromCreateRuta>
       sortingFn: esStringSort,
       enableColumnFilter: true,
       filterFn: includesFilter,
-      meta: { align: "left", serverSortKey: "estadoCliente" },
+      meta: { align: "left" },
       cell: ({ getValue }) => (
         <span className="block truncate">{String(getValue() ?? "")}</span>
       ),
@@ -140,7 +140,7 @@ export const columnsClientesRutaCreate: ColumnDef<ClienteInternetFromCreateRuta>
       sortingFn: numericSort,
       enableColumnFilter: true,
       filterFn: numberInRange, // filtra por cantidad de facturas
-      meta: { align: "right", serverSortKey: "facturasPendientes" },
+      meta: { align: "right" },
       cell: ({ getValue, row }) => {
         const count = Number(getValue() ?? 0);
         const saldo = Number((row.original as any)?.saldoPendiente ?? 0);
@@ -163,7 +163,7 @@ export const columnsClientesRutaCreate: ColumnDef<ClienteInternetFromCreateRuta>
       header: ({ column }) => {
         const [min, max] = (column.getFilterValue() as [
           number | null,
-          number | null
+          number | null,
         ]) ?? [null, null];
         return (
           <div className={HDR.wrap}>
@@ -205,7 +205,7 @@ export const columnsClientesRutaCreate: ColumnDef<ClienteInternetFromCreateRuta>
       sortingFn: esStringSort,
       enableColumnFilter: true,
       filterFn: includesFilter,
-      meta: { align: "left", serverSortKey: "sector.nombre" },
+      meta: { align: "left" },
       cell: ({ getValue }) => {
         const v = String(getValue() ?? "—");
         return (
@@ -242,7 +242,7 @@ export const columnsClientesRutaCreate: ColumnDef<ClienteInternetFromCreateRuta>
       sortingFn: esStringSort,
       enableColumnFilter: true,
       filterFn: includesFilter,
-      meta: { align: "left", serverSortKey: "zonaFacturacion" },
+      meta: { align: "left" },
       cell: ({ getValue }) => {
         const v = String(getValue() ?? "—");
         return (

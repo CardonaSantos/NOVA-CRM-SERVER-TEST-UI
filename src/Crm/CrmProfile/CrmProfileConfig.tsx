@@ -2,256 +2,352 @@
 
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Check, Loader } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  // CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { getUserProfile, updateUserProfile } from "./ProfileConfig.api";
-import { RolUsuario, type UserProfile } from "./interfacesProfile";
-import { useStoreCrm } from "../ZustandCrm/ZustandCrmContext";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, Palette, Save, UserRound } from "lucide-react";
 import { toast } from "sonner";
-import { PageTransitionCrm } from "@/components/Layout/page-transition";
 
-function CrmProfileConfig() {
-  // const userId = searchParams.get("id");
+import { AppButton } from "@/components/app/primitives/app-button";
+import { AppCard } from "@/components/app/primitives/app-card";
+import { AppInline } from "@/components/app/primitives/app-inline";
+import { AppStack } from "@/components/app/primitives/app-stack";
+import { AppTabs, type AppTabItem } from "@/components/app/primitives/app-tabs";
+import { AppThemeColorPicker } from "@/components/app/config/app-theme-color-picker";
+
+import { PageTransitionCrm } from "@/components/Layout/page-transition";
+import ImagesCropper from "@/Crm/Helpers/CutterImages/ImageCropper";
+
+import { useStoreCrm } from "../ZustandCrm/ZustandCrmContext";
+import { getUserProfile, updateUserProfile } from "./ProfileConfig.api";
+import { getApiErrorMessageAxios } from "@/utils/getApiAxiosMessage";
+import { RolUsuario } from "../features/users/users-rol";
+
+import { ProfileHeaderImages } from "./components/profile-header";
+import {
+  ProfileBasicInfo,
+  type ProfileFormData,
+} from "./components/profile-basic-info";
+
+type ProfileSettingsTab = "perfil" | "apariencia";
+
+export default function CrmProfileConfig() {
   const userId = useStoreCrm((state) => state.userIdCRM) ?? 0;
 
-  const [nombre, setNombre] = useState<string>("");
-  const [correo, setCorreo] = useState<string>("");
-  const [telefono, setTelefono] = useState<string>("");
-  const [contrasena, setContrasena] = useState<string>("");
-  const [rol, setRol] = useState<RolUsuario>(RolUsuario.TECNICO);
-  const [activo, setActivo] = useState<boolean>(true);
+  const [formData, setFormData] = useState<ProfileFormData>({
+    nombre: "",
+    correo: "",
+    telefono: "",
+    contrasena: "",
+    rol: RolUsuario.TECNICO,
+    activo: true,
+    bio: "",
+    notificarWhatsApp: false,
+    notificarPush: false,
+    notificarSonido: false,
+  });
 
-  const [loading, setLoading] = useState<boolean>(true);
-  const [updating, setUpdating] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [portadaFile, setPortadaFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [portadaPreview, setPortadaPreview] = useState<string | null>(null);
+
+  const [rawFiles, setRawFiles] = useState<File[]>([]);
+  const [openCropper, setOpenCropper] = useState(false);
+  const [cropTarget, setCropTarget] = useState<"avatar" | "portada" | null>(
+    null,
+  );
+
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    console.log("userId:", userId);
-    if (userId) {
-      setLoading(true);
-      getUserProfile(userId)
-        .then((data: UserProfile) => {
-          setNombre(data.nombre);
-          setCorreo(data.correo);
-          setTelefono(data.telefono);
-          setRol(data.rol);
-          setActivo(data.activo);
-        })
-        .catch((err) => {
-          setError("Error al cargar los datos del usuario");
-          console.error("Fetch error:", err);
-        })
-        .finally(() => {
-          console.log("Terminó el fetch");
-          setLoading(false);
+    if (!userId) return;
+
+    setLoading(true);
+
+    getUserProfile(userId)
+      .then((data: any) => {
+        setFormData({
+          nombre: data.nombre ?? "",
+          correo: data.correo ?? "",
+          telefono: data.telefono ?? "",
+          contrasena: "",
+          rol: data.rol ?? RolUsuario.TECNICO,
+          activo: data.activo ?? true,
+          bio: data.perfil?.bio ?? "",
+          notificarWhatsApp: data.perfil?.notificarWhatsApp ?? false,
+          notificarPush: data.perfil?.notificarPush ?? false,
+          notificarSonido: data.perfil?.notificarSonido ?? false,
         });
-    }
+
+        if (data.perfil?.avatar?.url) {
+          setAvatarPreview(data.perfil.avatar.url);
+        }
+
+        if (data.perfil?.portada?.url) {
+          setPortadaPreview(data.perfil.portada.url);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Error al cargar perfil");
+      })
+      .finally(() => setLoading(false));
   }, [userId]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFieldChange = (
+    field: keyof ProfileFormData,
+    value: string | boolean | RolUsuario,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
+  const handleImageSelected = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    type: "avatar" | "portada",
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setCropTarget(type);
+    setRawFiles([file]);
+    setOpenCropper(true);
+
+    event.target.value = "";
+  };
+
+  const handleCropDone = (croppedFiles: File[]) => {
+    const file = croppedFiles[0];
+    if (!file || !cropTarget) return;
+
+    const previewUrl = URL.createObjectURL(file);
+
+    if (cropTarget === "avatar") {
+      setAvatarFile(file);
+      setAvatarPreview(previewUrl);
+    } else {
+      setPortadaFile(file);
+      setPortadaPreview(previewUrl);
+    }
+
+    setRawFiles([]);
+    setCropTarget(null);
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!userId) return;
 
     setUpdating(true);
-    try {
-      const dataToUpdate: Partial<UserProfile> = {
-        nombre,
-        correo,
-        telefono,
-        rol: rol,
-        activo,
-      };
 
-      if (contrasena) {
-        dataToUpdate.contrasena = contrasena;
+    try {
+      const finalData = new FormData();
+
+      finalData.append("nombre", formData.nombre);
+      finalData.append("correo", formData.correo);
+      finalData.append("telefono", formData.telefono);
+      finalData.append("rol", formData.rol);
+      finalData.append("activo", String(formData.activo));
+
+      if (formData.contrasena.trim()) {
+        finalData.append("contrasena", formData.contrasena.trim());
       }
 
-      await updateUserProfile(userId, dataToUpdate);
-      // alert("Perfil actualizado correctamente");
-      localStorage.removeItem("tokenAuthCRM");
-      toast.info("Cerrando sesión...");
-      window.location.reload();
+      finalData.append("bio", formData.bio ?? "");
+      finalData.append("notificarWhatsApp", String(formData.notificarWhatsApp));
+      finalData.append("notificarPush", String(formData.notificarPush));
+      finalData.append("notificarSonido", String(formData.notificarSonido));
+
+      if (avatarFile) finalData.append("avatar", avatarFile);
+      if (portadaFile) finalData.append("portada", portadaFile);
+
+      const updatePromise = updateUserProfile(userId, finalData);
+
+      toast.promise(updatePromise, {
+        loading: "Guardando perfil...",
+        success: "Perfil actualizado",
+        error: (error) => getApiErrorMessageAxios(error),
+      });
+
+      await updatePromise;
+
+      if (formData.contrasena.trim()) {
+        localStorage.removeItem("tokenAuthCRM");
+        toast.info("Contraseña actualizada. Cerrando sesión...");
+        window.location.reload();
+      }
     } catch (err) {
-      setError("Error al actualizar el perfil");
       console.error(err);
+      toast.error("Error al guardar los cambios");
     } finally {
       setUpdating(false);
     }
   };
 
+  const profileTabs: AppTabItem<ProfileSettingsTab>[] = [
+    {
+      value: "perfil",
+      label: "Perfil",
+      icon: <UserRound className="h-3.5 w-3.5" />,
+      content: (
+        <form onSubmit={handleSubmit} className="min-w-0">
+          <AppStack gap="sm" className="min-w-0">
+            <div className="rounded-[var(--app-radius-md)] border border-[hsl(var(--app-border,var(--border)))] bg-[hsl(var(--app-card-bg,var(--card)))] p-2">
+              <ProfileHeaderImages
+                avatarPreview={avatarPreview}
+                portadaPreview={portadaPreview}
+                onImageSelected={handleImageSelected}
+              />
+            </div>
+
+            <div className="rounded-[var(--app-radius-md)] border border-[hsl(var(--app-border,var(--border)))] bg-[hsl(var(--app-card-bg,var(--card)))] px-3 py-3">
+              <ProfileBasicInfo
+                formData={formData}
+                onChange={handleFieldChange}
+              />
+            </div>
+
+            <AppInline
+              gap="xs"
+              align="center"
+              justify="end"
+              className="border-t border-[hsl(var(--app-border,var(--border)))] pt-2"
+            >
+              <AppButton
+                type="button"
+                variant="secondary"
+                size="xs"
+                width="auto"
+                onClick={() => window.history.back()}
+              >
+                Cancelar
+              </AppButton>
+
+              <AppButton
+                type="submit"
+                size="xs"
+                width="auto"
+                disabled={updating}
+                loading={updating}
+                loadingText="Guardando..."
+                leftIcon={
+                  !updating ? <Save className="h-3.5 w-3.5" /> : undefined
+                }
+              >
+                Guardar cambios
+              </AppButton>
+            </AppInline>
+          </AppStack>
+        </form>
+      ),
+    },
+    {
+      value: "apariencia",
+      label: "Apariencia",
+      icon: <Palette className="h-3.5 w-3.5" />,
+      content: (
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
+          <AppCard variant="outline" size="sm" radius="md" className="min-w-0">
+            <AppStack gap="xs" className="min-w-0">
+              <AppInline gap="xs" align="center" className="min-w-0 p-2">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--app-radius-sm)] bg-[hsl(var(--app-primary,var(--primary))/0.12)] text-[hsl(var(--app-primary,var(--primary)))]">
+                  <Palette className="h-4 w-4" />
+                </span>
+
+                <div className="min-w-0 p-2">
+                  <h3 className="truncate text-[13px] font-semibold leading-none text-[hsl(var(--app-foreground,var(--foreground)))]">
+                    Tema del CRM
+                  </h3>
+
+                  <p className="mt-1 text-[11px] leading-tight text-[hsl(var(--app-muted-foreground,var(--muted-foreground)))]">
+                    Cambia el color principal, modo claro/oscuro y acentos
+                    visuales sin tocar el CSS base.
+                  </p>
+                </div>
+              </AppInline>
+
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4 p-2">
+                <ThemePreviewChip label="Botones" />
+                <ThemePreviewChip label="Badges" />
+                <ThemePreviewChip label="Tablas" />
+                <ThemePreviewChip label="Selects" />
+              </div>
+            </AppStack>
+          </AppCard>
+
+          <AppCard variant="outline" size="xs" radius="md" className="min-w-0">
+            <AppThemeColorPicker />
+          </AppCard>
+        </div>
+      ),
+    },
+  ];
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader className="animate-spin mr-2" />
-        <h2>Cargando...</h2>
+      <div className="flex h-[50vh] items-center justify-center text-sm text-[hsl(var(--app-muted-foreground,var(--muted-foreground)))]">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin text-[hsl(var(--app-primary,var(--primary)))]" />
+        Cargando perfil...
       </div>
     );
   }
 
   return (
-    <PageTransitionCrm
-      titleHeader="Mi perfil"
-      subtitle={``}
-      variant="fade-pure"
-    >
-      <Card className="w-full">
-        <CardHeader className="pb-4 border-b">
-          <CardTitle className="text-xl text-center sm:text-left ">
-            <p className="text-center">Actualizar Perfil de Usuario</p>
-          </CardTitle>
-        </CardHeader>
+    <PageTransitionCrm titleHeader="Mi Perfil" subtitle="" variant="fade-pure">
+      <div className="mx-auto w-full max-w-5xl px-2 sm:px-3">
+        <AppCard
+          variant="outline"
+          size="xs"
+          radius="md"
+          className="min-w-0 overflow-hidden"
+        >
+          <div className="border-b border-[hsl(var(--app-border,var(--border)))] px-3 py-2">
+            <h2 className="truncate text-[15px] font-semibold leading-none text-[hsl(var(--app-foreground,var(--foreground)))]">
+              Configuración de cuenta
+            </h2>
 
-        <form onSubmit={handleSubmit}>
-          <CardContent className="pt-6">
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+            <p className="mt-1 truncate text-[11px] text-[hsl(var(--app-muted-foreground,var(--muted-foreground)))]">
+              Administra tu perfil, preferencias y apariencia del CRM.
+            </p>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label htmlFor="nombre" className="text-sm font-medium">
-                  Nombre
-                </label>
-                <Input
-                  id="nombre"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Nombre completo"
-                  required
-                  className="h-9"
-                />
-              </div>
+          <div className="px-3 py-2">
+            <AppTabs<ProfileSettingsTab>
+              tabs={profileTabs}
+              defaultValue="perfil"
+              size="sm"
+              variant="default"
+              align="start"
+              fullWidth
+              fullWidthTriggers={false}
+              hideIconsOnMobile={false}
+              listClassName="mb-3"
+              contentClassName="min-w-0"
+            />
+          </div>
+        </AppCard>
+      </div>
 
-              <div className="space-y-1.5">
-                <label htmlFor="correo" className="text-sm font-medium">
-                  Correo Electrónico
-                </label>
-                <Input
-                  id="correo"
-                  type="email"
-                  value={correo}
-                  onChange={(e) => setCorreo(e.target.value)}
-                  placeholder="correo@ejemplo.com"
-                  required
-                  className="h-9"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label htmlFor="telefono" className="text-sm font-medium">
-                  Teléfono
-                </label>
-                <Input
-                  id="telefono"
-                  value={telefono}
-                  onChange={(e) => setTelefono(e.target.value)}
-                  placeholder="Número de teléfono"
-                  className="h-9"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label htmlFor="rol" className="text-sm font-medium">
-                  Rol de Usuario
-                </label>
-                <Select
-                  disabled={true}
-                  value={rol}
-                  onValueChange={(value) => setRol(value as RolUsuario)}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Seleccionar rol" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={RolUsuario.TECNICO}>Técnico</SelectItem>
-                    <SelectItem value={RolUsuario.OFICINA}>Oficina</SelectItem>
-                    <SelectItem value={RolUsuario.ADMIN}>
-                      Administrador
-                    </SelectItem>
-                    <SelectItem value={RolUsuario.COBRADOR}>
-                      Cobrador
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label htmlFor="contrasena" className="text-sm font-medium">
-                  Contraseña
-                </label>
-                <Input
-                  id="contrasena"
-                  type="password"
-                  value={contrasena}
-                  onChange={(e) => setContrasena(e.target.value)}
-                  placeholder="Dejar en blanco para mantener la actual"
-                  className="h-9"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Dejar en blanco para mantener la contraseña actual
-                </p>
-              </div>
-
-              <div className="flex items-center space-x-4 p-3 rounded-lg border bg-gray-50/50 dark:bg-zinc-900">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Estado de la cuenta</p>
-                  <p className="text-xs text-gray-500 ">
-                    {activo ? "Usuario activo" : "Usuario inactivo"}
-                  </p>
-                </div>
-                <Switch disabled checked={activo} onCheckedChange={setActivo} />
-              </div>
-            </div>
-          </CardContent>
-
-          <CardFooter className="flex justify-between pt-2 pb-4 border-t mt-4">
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => window.history.back()}
-              className="h-9"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={updating} className="h-9">
-              {updating ? (
-                <>
-                  <Loader className="mr-2 h-4 w-4 animate-spin" />
-                  Actualizando...
-                </>
-              ) : (
-                <>
-                  <Check className="mr-2 h-4 w-4" />
-                  Guardar Cambios
-                </>
-              )}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+      <ImagesCropper
+        open={openCropper}
+        onOpenChange={setOpenCropper}
+        files={rawFiles}
+        onDone={handleCropDone}
+      />
     </PageTransitionCrm>
   );
 }
 
-export default CrmProfileConfig;
+function ThemePreviewChip({ label }: { label: string }) {
+  return (
+    <div
+      className={[
+        "flex h-8 items-center justify-center rounded-[var(--app-radius-sm)] border px-2",
+        "border-[hsl(var(--app-border,var(--border)))]",
+        "bg-[hsl(var(--app-primary,var(--primary))/0.10)]",
+        "text-[11px] font-medium",
+        "text-[hsl(var(--app-primary,var(--primary)))]",
+      ].join(" ")}
+    >
+      {label}
+    </div>
+  );
+}

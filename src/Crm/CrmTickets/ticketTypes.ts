@@ -1,11 +1,13 @@
-import { RolUsuario } from "../CrmProfile/interfacesProfile";
+import { Perfil } from "../features/cliente-interfaces/cliente-types";
+import { EstadoTicketSoporte } from "../features/dashboard/dashboard-tickets";
+import { RolUsuario } from "../features/users/users-rol";
 
 export interface User {
   id: number;
   name: string;
   initials: string;
   avatar?: string;
-  rol: string;
+  rol: RolUsuario;
 }
 
 export interface Companion {
@@ -16,6 +18,7 @@ export interface Companion {
 
 export interface Comment {
   user: User;
+  perfil: Perfil;
   text: string;
   date: string;
   isPrivate?: boolean;
@@ -24,18 +27,6 @@ export interface Comment {
 export interface Customer {
   id: number;
   name: string;
-}
-
-enum EstadoTicketSoporte {
-  NUEVO = "NUEVO",
-  ABIERTA = "ABIERTA",
-  EN_PROCESO = "EN_PROCESO",
-  PENDIENTE = "PENDIENTE",
-  PENDIENTE_CLIENTE = "PENDIENTE_CLIENTE",
-  PENDIENTE_TECNICO = "PENDIENTE_TECNICO",
-  RESUELTA = "RESUELTA",
-  CANCELADA = "CANCELADA",
-  ARCHIVADA = "ARCHIVADA",
 }
 
 enum PrioridadTicketSoporte {
@@ -66,18 +57,17 @@ export interface Ticket {
   tags?: Tags[];
   comments?: Comment[];
   customer: Customer | null;
-  metrics:MetricsTicket
+  metrics: MetricsTicket;
 }
-
 
 export interface MetricsTicket {
-  timeSpentMinutes: number, // Tiempo total (Vivo o Cerrado)
-            logsCount:number,  // Cuantas veces se trabajó
-        resolution:Solucion            
+  timeSpentMinutes: number; // Tiempo total (Vivo o Cerrado)
+  logsCount: number; // Cuantas veces se trabajó
+  resolution: Solucion;
 }
 interface Solucion {
-  solutionName: string
-  solutionDesc: string,
-  resolutionNote: string,
-  internalNote: string,
+  solutionName: string;
+  solutionDesc: string;
+  resolutionNote: string;
+  internalNote: string;
 }

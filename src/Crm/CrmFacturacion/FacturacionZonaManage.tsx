@@ -1,458 +1,278 @@
 "use client";
-
-import type React from "react";
-import { useState, useEffect } from "react";
-import axios from "axios";
-import { toast } from "sonner";
-import type {
-  FacturacionZona,
-  NuevaFacturacionZona,
-} from "../features/zonas-facturacion/FacturacionZonaTypes";
-
-// Icons
-import {
-  Search,
-  AlertCircle,
-  Loader2,
-  Plus,
-  Filter,
-  RefreshCw,
-} from "lucide-react";
-
-// UI Components
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
-import ZonaTable from "./ZonaTable";
-import EditZonaDialog from "./EditZonaDialogProps";
-import DeleteZonaDialog from "./DeleteZonaDialog";
-import CreateZonaDialog from "./CreateZonaDialog";
-import { useStoreCrm } from "../ZustandCrm/ZustandCrmContext";
+import { FileText, Map, Plus, RefreshCw, Search, Users } from "lucide-react";
+import { AppButton } from "@/components/app/primitives/app-button";
+import { AppCard } from "@/components/app/primitives/app-card";
+import { AppConfirmDialog } from "@/components/app/primitives/app-confirm-dialog";
+import { AppEmptyState } from "@/components/app/primitives/app-empty-state";
+import { AppGrid } from "@/components/app/primitives/app-grid";
+import { AppInline } from "@/components/app/primitives/app-inline";
+import { AppInput } from "@/components/app/primitives/app-input";
+import { AppSkeleton } from "@/components/app/primitives/app-skeleton";
+import { AppStack } from "@/components/app/primitives/app-stack";
 import { PageTransitionCrm } from "@/components/Layout/page-transition";
+import { useStoreCrm } from "../ZustandCrm/ZustandCrmContext";
+import { FacturacionZonaTable } from "./_components/facturacion-zona-table";
+import { useFacturacionZonaManager } from "./_components/use-facturacion-zona-manager";
+import {
+  CreateZonaDialog,
+  EditZonaDialog,
+} from "./_components/facturacion-zona-dialogs";
 
-const VITE_CRM_API_URL = import.meta.env.VITE_CRM_API_URL;
+function ZonaStatCard({
+  label,
+  value,
+  description,
+  icon,
+}: {
+  label: string;
+  value: React.ReactNode;
+  description: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <AppCard variant="outline" size="xs" className="px-3 py-2">
+      <AppInline align="center" justify="between" gap="sm">
+        <AppInline align="center" gap="xs" className="min-w-0">
+          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--app-radius-md)] bg-[hsl(var(--app-primary)/0.12)] text-[hsl(var(--app-primary))]">
+            {icon}
+          </span>
 
-const FacturacionZonaManage: React.FC = () => {
-  // State para zonas de facturación
-  const [zonas, setZonas] = useState<FacturacionZona[]>([]);
-  const [searchZona, setSearchZona] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+          <div className="min-w-0">
+            <p className="truncate text-[11px] font-medium leading-4 text-[hsl(var(--app-muted-foreground,var(--muted-foreground)))]">
+              {label}
+            </p>
+            <p className="truncate text-[10px] leading-3 text-[hsl(var(--app-muted-foreground,var(--muted-foreground)))]">
+              {description}
+            </p>
+          </div>
+        </AppInline>
 
-  const empresaId = useStoreCrm((state) => state.empresaId) ?? 0;
-
-  // State para formulario
-  const [nuevaZona, setNuevaZona] = useState<NuevaFacturacionZona>({
-    nombre: "",
-    empresaId: empresaId,
-    diaGeneracionFactura: 10,
-    enviarRecordatorioGeneracion: false,
-    diaPago: 20,
-    enviarAvisoPago: false,
-    diaRecordatorio: 5,
-    enviarRecordatorio1: false,
-    diaSegundoRecordatorio: 15,
-    enviarRecordatorio2: false,
-    horaRecordatorio: "08:00:00",
-    enviarRecordatorio: true,
-    diaCorte: 25,
-    suspenderTrasFacturas: 2,
-    // whatsapp: false,
-    // email: false,
-    // sms: false,
-    // llamada: false,
-    // telegram: false,
-  });
-
-  // State para diálogos
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingZona, setEditingZona] = useState<FacturacionZona | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [deleteZonaId, setDeleteZonaId] = useState<number | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-  // Cargar datos
-  useEffect(() => {
-    fetchZonas();
-  }, []);
-
-  // Función para cargar zonas de facturación
-  const fetchZonas = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await axios.get(`${VITE_CRM_API_URL}/facturacion-zona`);
-
-      if (response.status === 200) {
-        setZonas(response.data);
-      }
-    } catch (err) {
-      console.error("Error al cargar zonas de facturación:", err);
-      setError("Error al cargar las zonas de facturación. Intente nuevamente.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Submit handlers
-  const handleSubmitZona = async (zonaData: NuevaFacturacionZona) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await axios.post(
-        `${VITE_CRM_API_URL}/facturacion-zona`,
-        zonaData
-      );
-
-      if (response.status === 201) {
-        toast.success("Nueva Zona de Facturación Creada");
-        fetchZonas();
-        setIsCreateDialogOpen(false);
-      }
-
-      // Reset form
-      setNuevaZona({
-        nombre: "",
-        empresaId: empresaId,
-        diaGeneracionFactura: 10,
-        enviarRecordatorioGeneracion: false,
-        diaPago: 20,
-        enviarAvisoPago: false,
-        diaRecordatorio: 5,
-        enviarRecordatorio1: false,
-        diaSegundoRecordatorio: 15,
-        enviarRecordatorio2: false,
-        horaRecordatorio: "08:00:00",
-        enviarRecordatorio: true,
-        diaCorte: 25,
-        suspenderTrasFacturas: 2,
-        // whatsapp: false,
-        // email: false,
-        // sms: false,
-        // llamada: false,
-        // telegram: false,
-      });
-    } catch (err) {
-      toast.error("Error al crear zona");
-      console.error("Error al crear zona de facturación:", err);
-      setError("Error al crear la zona de facturación. Intente nuevamente.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Edit handlers
-  const handleEditClick = (zona: FacturacionZona) => {
-    setEditingZona(zona);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleSaveEdit = async (updatedZona: FacturacionZona) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await axios.patch(
-        `${VITE_CRM_API_URL}/facturacion-zona/update-zona-facturacion`,
-        updatedZona
-      );
-
-      if (response.status === 200) {
-        toast.success("Zona de Facturación Actualizada");
-        setZonas(zonas.map((z) => (z.id === updatedZona.id ? updatedZona : z)));
-        setIsEditDialogOpen(false);
-        setEditingZona(null);
-      }
-    } catch (err) {
-      toast.error("Error al actualizar zona");
-      console.error("Error al actualizar zona de facturación:", err);
-      setError(
-        "Error al actualizar la zona de facturación. Intente nuevamente."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Delete handlers
-  const handleDeleteClick = (id: number) => {
-    setDeleteZonaId(id);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (deleteZonaId === null) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await axios.delete(
-        `${VITE_CRM_API_URL}/facturacion-zona/${deleteZonaId}`
-      );
-
-      if (response.status === 200) {
-        toast.success("Zona de Facturación Eliminada");
-        setZonas(zonas.filter((z) => z.id !== deleteZonaId));
-        setIsDeleteDialogOpen(false);
-        setDeleteZonaId(null);
-      }
-    } catch (err) {
-      toast.error("Error al eliminar zona");
-      console.error("Error al eliminar zona de facturación:", err);
-      setError("Error al eliminar la zona de facturación. Intente nuevamente.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Filter zonas based on search
-  const filteredZonas = zonas.filter((zona) =>
-    zona.nombre.toLowerCase().includes(searchZona.toLowerCase())
+        <span className="shrink-0 text-sm font-bold tabular-nums leading-none text-[hsl(var(--app-foreground,var(--foreground)))]">
+          {value}
+        </span>
+      </AppInline>
+    </AppCard>
   );
+}
+
+export default function FacturacionZonaManage() {
+  const empresaId = useStoreCrm((state) => state.empresaId) ?? 0;
+  const vm = useFacturacionZonaManager(empresaId);
+
+  const statItems = [
+    {
+      label: "Zonas",
+      value: vm.stats.totalZonas,
+      description: "Configuradas",
+      icon: <Map size={13} />,
+    },
+    {
+      label: "Clientes",
+      value: vm.stats.totalClientes,
+      description: "Asignados",
+      icon: <Users size={13} />,
+    },
+    {
+      label: "Facturas",
+      value: vm.stats.totalFacturas,
+      description: "Generadas",
+      icon: <FileText size={13} />,
+    },
+  ];
 
   return (
     <PageTransitionCrm
       titleHeader="Zonas de facturación"
-      subtitle={``}
+      subtitle="Configuración de ciclos de cobro, recordatorios y cortes"
       variant="fade-pure"
     >
-      {/* Header con título y acciones */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="relative w-full sm:w-auto">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar zonas..."
-              className="pl-8 w-full sm:w-[250px]"
-              value={searchZona}
-              onChange={(e) => setSearchZona(e.target.value)}
+      <AppStack gap="md">
+        <AppInline align="center" justify="between" gap="sm" wrap>
+          <AppInline align="center" gap="xs" wrap className="w-full sm:w-auto">
+            <AppInput
+              value={vm.ui.searchZona}
+              onChange={(event) => vm.setSearchZona(event.target.value)}
+              placeholder="Buscar zona..."
+              size="xs"
+              fieldWidth="full"
+              leftIcon={<Search size={13} />}
+              className="sm:w-[260px]"
+              disabled={vm.isMutating}
             />
-          </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
-                <span className="sr-only">Filtrar</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setSearchZona("")}>
-                Limpiar filtros
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={fetchZonas}>
-                Actualizar datos
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <AppButton
+              type="button"
+              variant="secondary"
+              size="xs"
+              width="auto"
+              leftIcon={<RefreshCw size={13} />}
+              loading={vm.isFetching}
+              loadingText="Actualizando..."
+              disabled={vm.isMutating}
+              onClick={() => vm.refetch()}
+            >
+              Actualizar
+            </AppButton>
 
-          <Button
-            onClick={() => setIsCreateDialogOpen(true)}
-            className="w-full sm:w-auto"
+            <AppButton
+              type="button"
+              variant="secondary"
+              size="xs"
+              width="auto"
+              disabled={!vm.ui.searchZona || vm.isMutating}
+              onClick={vm.clearSearch}
+            >
+              Limpiar
+            </AppButton>
+          </AppInline>
+
+          <AppButton
+            type="button"
+            variant="primary"
+            size="xs"
+            width="auto"
+            leftIcon={<Plus size={13} />}
+            disabled={vm.isMutating}
+            onClick={vm.openCreateDialog}
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva Zona
-          </Button>
-        </div>
-      </div>
+            Nueva zona
+          </AppButton>
+        </AppInline>
 
-      {/* Mensajes de error */}
-      {error && (
-        <Alert variant="destructive" className="animate-in fade-in-50">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+        <AppGrid cols={{ base: 1, sm: 3 }} gap="xs">
+          {statItems.map((item) => (
+            <ZonaStatCard
+              key={item.label}
+              label={item.label}
+              value={
+                vm.isLoading ? <AppSkeleton className="h-4 w-10" /> : item.value
+              }
+              description={item.description}
+              icon={item.icon}
+            />
+          ))}
+        </AppGrid>
 
-      {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Zonas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {isLoading ? <Skeleton className="h-8 w-16" /> : zonas.length}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Zonas de facturación configuradas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Clientes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {isLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                zonas.reduce((acc, zona) => acc + (zona.clientesCount || 0), 0)
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Clientes asignados a zonas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Facturas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {isLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                zonas.reduce((acc, zona) => acc + (zona.facturasCount || 0), 0)
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Facturas generadas en todas las zonas
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tabla de zonas de facturación */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <CardTitle className="text-lg flex items-center gap-2">
-                Zonas de Facturación
-              </CardTitle>
-              <CardDescription>
-                Zonas de facturación configuradas
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={fetchZonas}>
-                <RefreshCw className="h-3.5 w-3.5 mr-1" />
-                Actualizar
-              </Button>
-              {/* <Button variant="outline" size="sm">
-                  <Download className="h-3.5 w-3.5 mr-1" />
-                  Exportar
-                </Button> */}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading && zonas.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">
-                Cargando zonas de facturación...
-              </p>
-            </div>
-          ) : zonas.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <div className="rounded-full bg-muted p-4">
-                <AlertCircle className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <div className="text-center space-y-2">
-                <h3 className="text-lg font-medium">
-                  No hay zonas de facturación
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  No se encontraron zonas de facturación. Cree una nueva zona
-                  para comenzar.
-                </p>
-                <Button
-                  onClick={() => setIsCreateDialogOpen(true)}
-                  className="mt-2"
+        <AppCard
+          variant="outline"
+          size="sm"
+          title="Zonas de facturación"
+          description={`${vm.filteredZonas.length} de ${vm.zonas.length} zonas`}
+        >
+          {vm.isLoading ? (
+            <AppStack gap="xs" className="py-2">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <AppSkeleton key={index} className="h-9 w-full" />
+              ))}
+            </AppStack>
+          ) : vm.zonas.length === 0 ? (
+            <AppEmptyState
+              preset="empty"
+              variant="plain"
+              size="sm"
+              align="center"
+              icon={<Map size={34} strokeWidth={1.5} />}
+              title="Sin zonas de facturación"
+              description="Cree una nueva zona para comenzar."
+              action={
+                <AppButton
+                  type="button"
+                  variant="primary"
+                  size="xs"
+                  width="auto"
+                  leftIcon={<Plus size={13} />}
+                  onClick={vm.openCreateDialog}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nueva Zona
-                </Button>
-              </div>
-            </div>
-          ) : filteredZonas.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <div className="rounded-full bg-muted p-4">
-                <Search className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <div className="text-center space-y-2">
-                <h3 className="text-lg font-medium">
-                  No se encontraron resultados
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  No se encontraron zonas que coincidan con "{searchZona}".
-                  Intente con otro término.
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => setSearchZona("")}
-                  className="mt-2"
+                  Nueva zona
+                </AppButton>
+              }
+              className="py-10"
+            />
+          ) : vm.filteredZonas.length === 0 ? (
+            <AppEmptyState
+              preset="search"
+              variant="plain"
+              size="sm"
+              align="center"
+              icon={<Search size={34} strokeWidth={1.5} />}
+              title="Sin resultados"
+              description={`No se encontraron zonas para "${vm.ui.searchZona}".`}
+              action={
+                <AppButton
+                  type="button"
+                  variant="secondary"
+                  size="xs"
+                  width="auto"
+                  onClick={vm.clearSearch}
                 >
                   Limpiar búsqueda
-                </Button>
-              </div>
-            </div>
+                </AppButton>
+              }
+              className="py-10"
+            />
           ) : (
-            <ZonaTable
-              zonas={filteredZonas}
-              searchTerm={searchZona}
-              onEditClick={handleEditClick}
-              onDeleteClick={handleDeleteClick}
+            <FacturacionZonaTable
+              zonas={vm.filteredZonas}
+              onEdit={vm.openEditDialog}
+              onDelete={vm.openDeleteDialog}
             />
           )}
-        </CardContent>
-      </Card>
+        </AppCard>
+      </AppStack>
 
-      {/* Diálogo para CREAR zona */}
       <CreateZonaDialog
-        isOpen={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        initialData={nuevaZona}
-        onSubmit={handleSubmitZona}
-        isLoading={isLoading}
+        open={vm.createDialog.isOpen}
+        onOpenChange={(open) => {
+          vm.createDialog.setOpen(open);
+          if (!open) vm.resetZonaForm();
+        }}
+        form={vm.ui.zonaForm}
+        isLoading={vm.isCreating}
+        onPatch={vm.patchZonaForm}
+        onSubmit={vm.submitCreate}
       />
 
-      {/* Diálogo para EDITAR zona */}
       <EditZonaDialog
-        isOpen={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        zona={editingZona}
-        onSave={handleSaveEdit}
-        isLoading={isLoading}
+        open={vm.editDialog.isOpen}
+        onOpenChange={(open) => {
+          vm.editDialog.setOpen(open);
+          if (!open) vm.resetZonaForm();
+        }}
+        form={vm.ui.zonaForm}
+        isLoading={vm.isPatching}
+        onPatch={vm.patchZonaForm}
+        onSubmit={vm.submitEdit}
       />
 
-      {/* Diálogo para ELIMINAR zona */}
-      <DeleteZonaDialog
-        isOpen={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        onConfirmDelete={handleConfirmDelete}
-        isLoading={isLoading}
-      />
+      <AppConfirmDialog
+        open={vm.deleteDialog.isOpen}
+        onOpenChange={vm.deleteDialog.setOpen}
+        preset="delete"
+        tone="danger"
+        size="sm"
+        footerAlign="between"
+        title="Eliminar zona de facturación"
+        description="Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        loadingText="Eliminando..."
+        isLoading={vm.isDeleting}
+        preventClose={vm.isDeleting}
+        closeOnConfirm={false}
+        onConfirm={vm.confirmDelete}
+      >
+        <p className="text-xs text-[hsl(var(--app-muted-foreground,var(--muted-foreground)))]">
+          Zona seleccionada:{" "}
+          <span className="font-semibold text-[hsl(var(--app-foreground,var(--foreground)))]">
+            {vm.deleteDialog.target?.nombre ?? "Sin nombre"}
+          </span>
+        </p>
+
+        <p className="mt-2 text-xs text-[hsl(var(--app-muted-foreground,var(--muted-foreground)))]">
+          Si hay clientes o facturas asociadas a esta zona, se perderá la
+          relación con ellos.
+        </p>
+      </AppConfirmDialog>
     </PageTransitionCrm>
   );
-};
-
-export default FacturacionZonaManage;
+}

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RolUsuario, UserProfile } from "./interfacesProfile";
+import { UserProfile } from "./interfacesProfile";
 import React from "react";
 import {
   Select,
@@ -20,13 +20,14 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Loader } from "lucide-react";
+import { RolUsuario } from "../features/users/users-rol";
 
 interface DialogProps {
   user: UserProfile | null;
   setOpenEdit: (value: boolean) => void;
   openEdit: boolean;
   handleChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => void;
   handleRolChange: (value: string) => void;
   handleActivoChange: (checked: boolean) => void;

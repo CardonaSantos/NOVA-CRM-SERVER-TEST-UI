@@ -1,5 +1,3 @@
-// /src/Crm/CrmHooks/hooks/dashboard/Qk.ts
-
 export const DashboardQkeys = {
   all: ["dashboard-data"] as const,
   kps: ["dashboard-kpis"] as const,
@@ -21,4 +19,8 @@ export const InstalacionesVsDesinstalacionesQkeys = {
 export const TicketsAsignadosQkeys = {
   all: ["tickets-tec-asignado"] as const,
   specific: (ticketId: number) => ["ticket-tec-asignado", ticketId] as const,
+};
+
+export const tecnicoPanelQkeys = {
+  all: ["tecnico-panel"] as const,
 };

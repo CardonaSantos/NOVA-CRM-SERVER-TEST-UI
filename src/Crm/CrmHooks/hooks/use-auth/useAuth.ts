@@ -1,4 +1,4 @@
-import { RolUsuario } from "@/Crm/CrmProfile/interfacesProfile";
+import { RolUsuario } from "@/Crm/features/users/users-rol";
 import { useCrmMutation } from "@/Crm/hooks/crmApiHooks";
 
 export interface LoginDto {
@@ -14,14 +14,10 @@ export interface RegisterDto {
   empresaId: number;
 }
 
-export function useLogin(dto: LoginDto) {
-  return useCrmMutation("post", `auth/login-user`, {
-    params: dto,
-  });
+export function useLogin() {
+  return useCrmMutation<LoginDto>("post", "auth/login-user");
 }
 
-export function useRegister(dto: RegisterDto) {
-  return useCrmMutation("post", `auth/regist-user`, {
-    params: dto,
-  });
+export function useRegister() {
+  return useCrmMutation<RegisterDto>("post", "auth/regist-user");
 }
