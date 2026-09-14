@@ -112,6 +112,12 @@ import { CrmForbiddenPage } from "../CrmAuthRoutes/auth/CrmForbiddenPage";
 import TicketsAsignados from "../CrmNewDashboard/tickets-asignados";
 import TecDashboard from "../CrmNewDashboard/tecnico-panel/TecDashboard";
 import { ReportesPage } from "../CrmReportes/pages/reportes-page";
+import PppoeCuentasListPage from "../CrmPppoeCuentas/listado/pppoe-cuentas-list-page";
+import PppoeCuentaDetailPage from "../CrmPppoeCuentas/detalles/pppoe-cuenta-detail-page";
+import PppoeCuentaCreatePage from "../CrmPppoeCuentas/crear/pppoe-cuenta-create-page";
+
+import PppoeCuentaAdopcionPage from "../CrmPppoeCuentas/adopcion/pppoe-cuenta-adopcion-page";
+import RouterFormPage from "../routers/_components/form/page";
 
 /*
  * Entrada principal del CRM.
@@ -560,6 +566,22 @@ function CrmRoutes() {
           )}
         />
 
+        <Route
+          path="/crm/routers/nuevo"
+          element={permissionRoute(
+            CRM_PERMISSION.OPTICO_VER,
+            <RouterFormPage />,
+          )}
+        />
+
+        <Route
+          path="/crm/routers/:routerId/editar"
+          element={permissionRoute(
+            CRM_PERMISSION.OPTICO_VER,
+            <RouterFormPage />,
+          )}
+        />
+
         {/* ================================================= */}
         {/* REPORTES */}
         {/* ================================================= */}
@@ -644,6 +666,37 @@ function CrmRoutes() {
         {/* ================================================= */}
         {/* PPPoE */}
         {/* ================================================= */}
+        <Route
+          path="/crm/pppoe/cuentas"
+          element={permissionRoute(
+            CRM_PERMISSION.PPPOE_ADMINISTRACION_VER,
+            <PppoeCuentasListPage />,
+          )}
+        />
+
+        <Route
+          path="/crm/pppoe/cuentas/nueva"
+          element={permissionRoute(
+            CRM_PERMISSION.PPPOE_ACTIVAR_INICIAL,
+            <PppoeCuentaCreatePage />,
+          )}
+        />
+
+        <Route
+          path="/crm/pppoe/cuentas/adoptar"
+          element={permissionRoute(
+            CRM_PERMISSION.PPPOE_ACTIVAR_INICIAL,
+            <PppoeCuentaAdopcionPage />,
+          )}
+        />
+
+        <Route
+          path="/crm/pppoe/cuentas/:cuentaPppoeId"
+          element={permissionRoute(
+            CRM_PERMISSION.PPPOE_ADMINISTRACION_VER,
+            <PppoeCuentaDetailPage />,
+          )}
+        />
 
         <Route
           path="/crm/pppoe/homologacion-perfiles"
