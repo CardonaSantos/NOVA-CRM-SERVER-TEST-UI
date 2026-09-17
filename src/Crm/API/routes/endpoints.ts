@@ -115,9 +115,6 @@ export const crm_endpoints = {
     ) =>
       `/cliente-instalaciones/${instalacionId}/accesos/${accesoInternetId}/prealta-pppoe/reintentar`,
 
-    post_revelar_credenciales: (instalacionId: number) =>
-      `/cliente-instalaciones/${instalacionId}/credenciales-pppoe/revelar`,
-
     // FLUJO PPPoE DE INSTALACIÓN
 
     post_iniciar_instalacion: (instalacionId: number) =>
@@ -138,6 +135,9 @@ export const crm_endpoints = {
 
     post_reactivar_cuenta: (cuentaPppoeId: number) =>
       `/pppoe-cuentas/${cuentaPppoeId}/reactivar`,
+
+    post_dar_de_baja_cuenta: (cuentaPppoeId: number) =>
+      `/pppoe-cuentas/${cuentaPppoeId}/dar-de-baja`,
 
     // OPERACIONES PPPoE
 
@@ -225,6 +225,30 @@ export const crm_endpoints = {
       firma: (token: string) =>
         `ticket-soporte-conformidad/public/${encodeURIComponent(token)}/firma`,
     },
+  },
+
+  ticket_historial: {
+    /**
+     * Historial completo de un ticket concreto.
+     *
+     * GET
+     * /ticket-soporte-historial/ticket/:ticketId
+     */
+    by_ticket: (ticketId: number) =>
+      `/ticket-soporte-historial/ticket/${ticketId}`,
+
+    /**
+     * Consulta administrativa general.
+     *
+     * La dejamos disponible desde ahora aunque todavía
+     * no la utilicemos en la pantalla de tickets.
+     */
+    list: `/ticket-soporte-historial`,
+
+    /**
+     * Obtiene un registro concreto del historial.
+     */
+    by_id: (historialId: number) => `/ticket-soporte-historial/${historialId}`,
   },
 
   contrato: {

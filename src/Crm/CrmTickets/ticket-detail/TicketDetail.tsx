@@ -40,6 +40,7 @@ import {
   safeFormatTicketDate,
 } from "../_components/ticket-detail.helpers";
 import { TicketConformidadDialog } from "./conformidad/TicketConformidadDialog";
+import { useGetTicketHistory } from "@/Crm/CrmHooks/hooks/use-tickets/useTicketHistory";
 
 interface TicketDetailProps {
   ticket: Ticket;
@@ -60,7 +61,7 @@ export default function TicketDetail({
   optionsTecs,
   optionsCustomers,
   soluciones,
-  query,
+  // query,
 }: TicketDetailProps) {
   const userId = useStoreCrm((state) => state.userIdCRM) ?? 0;
   const queryClient = useQueryClient();
@@ -73,9 +74,24 @@ export default function TicketDetail({
   const ticketEdit = useAppStateHandlers<Ticket>(ticket);
 
   const createTicketResumen = useCreateTicketResumen();
+
   const deleteTicket = useDeleteTicket(ticket.id);
+
   const updateTicket = useUpdateTicket(ticketEdit.state.id);
+
   const postCommentary = usePostCommentary();
+
+  // =========================================================
+  // HISTORIAL DEL TICKET SELECCIONADO
+  // =========================================================
+
+  const { data: historyResponse, isLoading: isHistoryLoading } =
+    useGetTicketHistory(ticket.id);
+
+  const ticketHistory = React.useMemo(
+    () => historyResponse?.data ?? [],
+    [historyResponse?.data],
+  );
 
   const formCloseTicket = useForm<TicketResumenSchemaType>({
     defaultValues: {
@@ -99,9 +115,9 @@ export default function TicketDetail({
 
   const invalidateTickets = React.useCallback(async () => {
     await queryClient.invalidateQueries({
-      queryKey: ticketsSoporteQkeys.search(query),
+      queryKey: ticketsSoporteQkeys.all,
     });
-  }, [query, queryClient]);
+  }, [queryClient]);
 
   const handleCloseView = React.useCallback(() => {
     setSelectedTicketId(null);
@@ -135,20 +151,53 @@ export default function TicketDetail({
 
       if (!currentTicket.title?.trim()) {
         toast.info("El ticket debe tener un título");
+
         return;
       }
 
-      const payload = buildUpdateTicketPayload(currentTicket);
+      const payload = {
+        ...buildUpdateTicketPayload(currentTicket),
 
-      await toast.promise(updateTicket.mutateAsync(payload), {
+        userId,
+      };
+
+      /**
+       * Usamos la Promise de mutateAsync como fuente
+       * real de sincronización.
+       *
+       * No utilizamos el retorno de toast.promise()
+       * para determinar cuándo terminó la operación.
+       */
+      const updatePromise = updateTicket.mutateAsync(payload);
+
+      toast.promise(updatePromise, {
         loading: "Actualizando ticket...",
+
         success: "Ticket actualizado",
+
         error: (error) => getApiErrorMessageAxios(error),
       });
 
-      await invalidateTickets();
+      /**
+       * useUpdateTicket tiene un onSuccess async.
+       *
+       * Por eso este await incluye:
+       *
+       * PATCH
+       *   ↓
+       * backend confirma transacción
+       *   ↓
+       * invalidate tickets
+       *   ↓
+       * invalidate historial
+       *   ↓
+       * refetch queries activas
+       */
+      await updatePromise;
+
       editDialog.close();
     },
+
     {
       preventConcurrent: true,
     },
@@ -335,6 +384,8 @@ export default function TicketDetail({
         closedAt={safeFormatTicketDate(ticket.closedAt)}
         metricas={ticket.metrics}
         comments={ticket.comments}
+        history={ticketHistory}
+        isHistoryLoading={isHistoryLoading}
         creator={ticket.creator}
       />
 
